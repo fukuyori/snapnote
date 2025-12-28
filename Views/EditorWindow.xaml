@@ -1,0 +1,347 @@
+<Window x:Class="SnapNoteStudio.Views.EditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SnapNote Studio - Edit" 
+        WindowStartupLocation="CenterScreen"
+        MinWidth="1200" MinHeight="800"
+        KeyDown="Window_KeyDown">
+    
+    <Window.Resources>
+        <!-- Colors -->
+        <Color x:Key="PrimaryColor">#4A90D9</Color>
+        <Color x:Key="SidebarBg">#2D2D30</Color>
+        <Color x:Key="SidebarHover">#3E3E42</Color>
+        <Color x:Key="SidebarSelected">#007ACC</Color>
+        <Color x:Key="HeaderBg">#3C3C3C</Color>
+        
+        <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+        <SolidColorBrush x:Key="SidebarBgBrush" Color="{StaticResource SidebarBg}"/>
+        <SolidColorBrush x:Key="HeaderBgBrush" Color="{StaticResource HeaderBg}"/>
+        
+        <!-- Tool Button Style -->
+        <Style x:Key="ToolButtonStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                BorderThickness="2"
+                                BorderBrush="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#3E3E42"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#007ACC"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Color Button Style -->
+        <Style x:Key="ColorButtonStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                BorderThickness="2"
+                                BorderBrush="#555555"
+                                Cursor="Hand">
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="White"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Action Button Style -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#4E4E52"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#666666"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Image Button Style -->
+        <Style x:Key="ImageOpButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Margin" Value="2"/>
+        </Style>
+    </Window.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="120" MinWidth="120" MaxWidth="120"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- Header Bar -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="{StaticResource HeaderBgBrush}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="36"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Top row: Undo/Redo, Title, Save/Copy -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Undo/Redo -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="8,0">
+                        <Button x:Name="UndoButton" Content="↩ 戻す" 
+                                Style="{StaticResource ActionButtonStyle}"
+                                ToolTip="元に戻す (Ctrl+Z)" Click="UndoButton_Click"/>
+                        <Button x:Name="RedoButton" Content="↪ やり直し" 
+                                Style="{StaticResource ActionButtonStyle}"
+                                ToolTip="やり直し (Ctrl+Y)" Click="RedoButton_Click"/>
+                    </StackPanel>
+                    
+                    <!-- Title -->
+                    <TextBlock Grid.Column="1" Text="SnapNote Studio" 
+                               Foreground="#AAAAAA" FontSize="14"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    
+                    <!-- Save/Copy -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0">
+                        <Button Content="📋 コピー" Style="{StaticResource ActionButtonStyle}"
+                                ToolTip="クリップボードにコピー (Ctrl+C)" Click="CopyButton_Click"/>
+                        <Button Content="💾 保存" Style="{StaticResource ActionButtonStyle}"
+                                ToolTip="ファイルに保存 (Ctrl+S)" Click="SaveButton_Click"
+                                Background="{StaticResource PrimaryBrush}" Foreground="White"/>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- Bottom row: Color palette and stroke width -->
+                <Border Grid.Row="1" Background="#333333" Padding="8,4">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Color Palette -->
+                        <TextBlock Text="色:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <RadioButton x:Name="ColorRed" Background="#FF0000" GroupName="Colors" 
+                                     Style="{StaticResource ColorButtonStyle}" IsChecked="True"
+                                     Checked="ColorButton_Checked" Tag="#FFFF0000"/>
+                        <RadioButton x:Name="ColorBlue" Background="#0066FF" GroupName="Colors"
+                                     Style="{StaticResource ColorButtonStyle}"
+                                     Checked="ColorButton_Checked" Tag="#FF0066FF"/>
+                        <RadioButton x:Name="ColorGreen" Background="#00AA00" GroupName="Colors"
+                                     Style="{StaticResource ColorButtonStyle}"
+                                     Checked="ColorButton_Checked" Tag="#FF00AA00"/>
+                        <RadioButton x:Name="ColorYellow" Background="#FFFF00" GroupName="Colors"
+                                     Style="{StaticResource ColorButtonStyle}"
+                                     Checked="ColorButton_Checked" Tag="#FFFFFF00"/>
+                        <RadioButton x:Name="ColorOrange" Background="#FF8800" GroupName="Colors"
+                                     Style="{StaticResource ColorButtonStyle}"
+                                     Checked="ColorButton_Checked" Tag="#FFFF8800"/>
+                        <RadioButton x:Name="ColorPurple" Background="#AA00FF" GroupName="Colors"
+                                     Style="{StaticResource ColorButtonStyle}"
+                                     Checked="ColorButton_Checked" Tag="#FFAA00FF"/>
+                        <RadioButton x:Name="ColorBlack" Background="#000000" GroupName="Colors"
+                                     Style="{StaticResource ColorButtonStyle}"
+                                     Checked="ColorButton_Checked" Tag="#FF000000"/>
+                        <RadioButton x:Name="ColorWhite" Background="#FFFFFF" GroupName="Colors"
+                                     Style="{StaticResource ColorButtonStyle}"
+                                     Checked="ColorButton_Checked" Tag="#FFFFFFFF"/>
+                        
+                        <!-- Separator -->
+                        <Border Width="1" Background="#555555" Margin="12,2"/>
+                        
+                        <!-- Stroke Width Slider -->
+                        <TextBlock Text="太さ:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Slider x:Name="StrokeWidthSlider" Width="80" Minimum="1" Maximum="10" Value="3"
+                                VerticalAlignment="Center" ValueChanged="StrokeWidthSlider_ValueChanged"/>
+                        <TextBlock x:Name="StrokeWidthText" Text="3" Foreground="#CCCCCC" 
+                                   VerticalAlignment="Center" Margin="4,0,0,0" Width="16"/>
+                        
+                        <!-- Separator -->
+                        <Border Width="1" Background="#555555" Margin="12,2"/>
+                        
+                        <!-- Opacity/Intensity Slider -->
+                        <TextBlock Text="濃さ:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Slider x:Name="OpacitySlider" Width="80" Minimum="0.1" Maximum="1.0" Value="1.0"
+                                VerticalAlignment="Center" ValueChanged="OpacitySlider_ValueChanged"/>
+                        <TextBlock x:Name="OpacityText" Text="100%" Foreground="#CCCCCC" 
+                                   VerticalAlignment="Center" Margin="4,0,0,0" Width="36"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+        
+        <!-- Left Sidebar -->
+        <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource SidebarBgBrush}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="4">
+                    <!-- Drawing Tools -->
+                    <TextBlock Text="描画" Foreground="#888888" FontSize="10" 
+                               Margin="4,8,4,4" FontWeight="Bold"/>
+                    
+                    <WrapPanel Width="112">
+                        <RadioButton x:Name="SelectToolButton" Content="▶" ToolTip="選択 (V)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="SelectTool_Checked"/>
+                        <RadioButton x:Name="ArrowToolButton" Content="➜" ToolTip="矢印 (A)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     IsChecked="True" Checked="ArrowTool_Checked"/>
+                        <RadioButton x:Name="LineToolButton" Content="╱" ToolTip="線 (L)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="LineTool_Checked"/>
+                        <RadioButton x:Name="RectToolButton" Content="□" ToolTip="四角形 (R)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="RectTool_Checked"/>
+                        <RadioButton x:Name="EllipseToolButton" Content="○" ToolTip="楕円 (E)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="EllipseTool_Checked"/>
+                        <RadioButton x:Name="TextToolButton" Content="T" ToolTip="テキスト (T)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="TextTool_Checked"/>
+                        <RadioButton x:Name="StepToolButton" Content="①" ToolTip="番号 (N)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="StepTool_Checked"/>
+                        <RadioButton x:Name="HighlighterToolButton" Content="🖍" ToolTip="蛍光ペン (H)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="HighlighterTool_Checked"/>
+                    </WrapPanel>
+                    
+                    <!-- Separator -->
+                    <Border Height="1" Background="#444444" Margin="4,8"/>
+                    
+                    <!-- Effect Tools -->
+                    <TextBlock Text="効果" Foreground="#888888" FontSize="10" 
+                               Margin="4,4,4,4" FontWeight="Bold"/>
+                    
+                    <WrapPanel Width="112">
+                        <RadioButton x:Name="FilledRectToolButton" Content="■" ToolTip="塗りつぶし (F)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="FilledRectTool_Checked"/>
+                        <RadioButton x:Name="MosaicToolButton" Content="▦" ToolTip="モザイク (M)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="MosaicTool_Checked"/>
+                        <RadioButton x:Name="BlurToolButton" Content="◎" ToolTip="ぼかし (B)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="BlurTool_Checked"/>
+                        <RadioButton x:Name="SpotlightToolButton" Content="💡" ToolTip="スポットライト (S)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="SpotlightTool_Checked"/>
+                        <RadioButton x:Name="MagnifierToolButton" Content="🔍" ToolTip="拡大鏡 (G)" 
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     Checked="MagnifierTool_Checked"/>
+                    </WrapPanel>
+                    
+                    <!-- Separator -->
+                    <Border Height="1" Background="#444444" Margin="4,8"/>
+                    
+                    <!-- Image Operations -->
+                    <TextBlock Text="画像" Foreground="#888888" FontSize="10" 
+                               Margin="4,4,4,4" FontWeight="Bold"/>
+                    
+                    <WrapPanel Width="112">
+                        <Button Content="✂切抜" ToolTip="切り抜き" 
+                                Style="{StaticResource ImageOpButtonStyle}"
+                                Click="CropButton_Click"/>
+                        <Button Content="↻回転" ToolTip="90度回転" 
+                                Style="{StaticResource ImageOpButtonStyle}"
+                                Click="RotateButton_Click"/>
+                        <Button Content="⇲縮小" ToolTip="リサイズ" 
+                                Style="{StaticResource ImageOpButtonStyle}"
+                                Click="ResizeButton_Click"/>
+                    </WrapPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+        
+        <!-- Main Editor Area -->
+        <ScrollViewer Grid.Row="1" Grid.Column="1" 
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
+                      Background="#1E1E1E">
+            <Border Background="White"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Margin="20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.5"/>
+                </Border.Effect>
+                
+                <Grid x:Name="EditorContainer">
+                    <Image x:Name="BackgroundImage" 
+                           Stretch="None"
+                           IsHitTestVisible="False"/>
+                    
+                    <Canvas x:Name="EditorCanvas"
+                            Background="Transparent"
+                            ClipToBounds="True"
+                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                            MouseMove="Canvas_MouseMove"
+                            MouseLeftButtonUp="Canvas_MouseLeftButtonUp"/>
+                </Grid>
+            </Border>
+        </ScrollViewer>
+        
+        <!-- Bottom Status Bar -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource SidebarBgBrush}"
+                Padding="12,6">
+            <Grid>
+                <TextBlock x:Name="StatusText" Text="準備完了" Foreground="#888888" HorizontalAlignment="Left"/>
+                <TextBlock x:Name="StepCountText" Text="" Foreground="#AAAAAA" HorizontalAlignment="Right"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

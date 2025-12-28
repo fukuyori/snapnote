@@ -1,0 +1,57 @@
+<!-- SnapNote Studio icon (Bright, 512x512) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="SnapNote Studio">
+  <defs>
+    <!-- Bright accent gradient -->
+    <linearGradient id="accent" x1="120" y1="120" x2="392" y2="392" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4FE3D7"/>
+      <stop offset="1" stop-color="#4A7DFF"/>
+    </linearGradient>
+    <!-- Light background gradient -->
+    <linearGradient id="bg" x1="100" y1="80" x2="420" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4F8FF"/>
+      <stop offset="1" stop-color="#E6EEFF"/>
+    </linearGradient>
+    <!-- Soft shadow (lighter) -->
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <!-- Background tile -->
+  <rect x="56" y="56" width="400" height="400" rx="96" fill="url(#bg)" filter="url(#shadow)"/>
+  <!-- Layer cards (Studio layers) -->
+  <g>
+    <rect x="150" y="150" width="240" height="270" rx="26" fill="#FFFFFF" opacity="0.65"/>
+    <rect x="138" y="162" width="240" height="270" rx="26" fill="#FFFFFF" opacity="0.85"/>
+  </g>
+  <!-- Note sheet -->
+  <g>
+    <rect x="124" y="132" width="264" height="298" rx="30"
+          fill="#FFFFFF" stroke="#D6E1FF" stroke-width="3"/>
+    <!-- folded corner -->
+    <path d="M352 132h-46c-10 0-18 8-18 18v46"
+          fill="none" stroke="url(#accent)" stroke-width="10"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Camera frame brackets (Snap) -->
+  <g fill="none" stroke="#9DB3FF" stroke-width="10"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M160 188h40m-40 0v40"/>
+    <path d="M352 188h-40m40 0v40"/>
+    <path d="M160 360h40m-40 0v-40"/>
+    <path d="M352 360h-40m40 0v-40"/>
+  </g>
+  <!-- Annotation arrow (Note) -->
+  <g fill="none" stroke="url(#accent)" stroke-width="14"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M188 322 L294 252"/>
+    <path d="M292 252 L292 292"/>
+    <path d="M292 252 L332 252"/>
+  </g>
+  <!-- Text lines on note -->
+  <g stroke="#C7D6FF" stroke-width="8" stroke-linecap="round">
+    <path d="M168 236h148"/>
+    <path d="M168 266h120"/>
+  </g>
+  <!-- Indicator dot -->
+  <circle cx="338" cy="210" r="9" fill="url(#accent)"/>
+</svg>
