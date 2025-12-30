@@ -83,7 +83,14 @@ public partial class SettingsDialog : Window
     {
         if (LanguageComboBox.SelectedItem is ComboBoxItem item && item.Tag is string lang)
         {
-            L10n.CurrentLanguage = lang == "Japanese" ? AppLanguage.Japanese : AppLanguage.English;
+            L10n.CurrentLanguage = lang switch
+            {
+                "Japanese" => AppLanguage.Japanese,
+                "Chinese" => AppLanguage.Chinese,
+                "Spanish" => AppLanguage.Spanish,
+                "Korean" => AppLanguage.Korean,
+                _ => AppLanguage.English
+            };
             ApplyLocalization();
         }
     }
@@ -131,7 +138,14 @@ public partial class SettingsDialog : Window
     private void Cancel_Click(object sender, RoutedEventArgs e)
     {
         // Restore original language
-        L10n.CurrentLanguage = _initialLanguage == "Japanese" ? AppLanguage.Japanese : AppLanguage.English;
+        L10n.CurrentLanguage = _initialLanguage switch
+        {
+            "Japanese" => AppLanguage.Japanese,
+            "Chinese" => AppLanguage.Chinese,
+            "Spanish" => AppLanguage.Spanish,
+            "Korean" => AppLanguage.Korean,
+            _ => AppLanguage.English
+        };
         
         DialogResult = false;
         Close();

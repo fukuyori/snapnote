@@ -89,12 +89,48 @@ public partial class EditorWindow : Window
     private void ApplyLocalization()
     {
         Title = L10n.Get("EditorTitle");
+        
+        // Header buttons
+        UndoButton.Content = L10n.Get("Undo");
+        RedoButton.Content = L10n.Get("Redo");
+        CopyButton.Content = L10n.Get("Copy");
+        SaveButton.Content = L10n.Get("Save");
+        
+        // Header labels
+        ColorLabel.Text = L10n.Get("Color");
+        ThicknessLabel.Text = L10n.Get("Thickness");
+        OpacityLabel.Text = L10n.Get("Opacity");
+        
+        // Sidebar section labels
+        DrawingLabel.Text = L10n.Get("Drawing");
+        EffectsLabel.Text = L10n.Get("Effects");
+        ImageLabel.Text = L10n.Get("Image");
+        
+        // Tool tooltips
+        SelectToolButton.ToolTip = L10n.Get("ToolSelect");
+        ArrowToolButton.ToolTip = L10n.Get("ToolArrow");
+        LineToolButton.ToolTip = L10n.Get("ToolLine");
+        RectToolButton.ToolTip = L10n.Get("ToolRect");
+        EllipseToolButton.ToolTip = L10n.Get("ToolEllipse");
+        TextToolButton.ToolTip = L10n.Get("ToolText");
+        StepToolButton.ToolTip = L10n.Get("ToolStep");
+        HighlighterToolButton.ToolTip = L10n.Get("ToolHighlighter");
+        FilledRectToolButton.ToolTip = L10n.Get("ToolFilled");
+        MosaicToolButton.ToolTip = L10n.Get("ToolMosaic");
+        BlurToolButton.ToolTip = L10n.Get("ToolBlur");
+        SpotlightToolButton.ToolTip = L10n.Get("ToolSpotlight");
+        MagnifierToolButton.ToolTip = L10n.Get("ToolMagnifier");
+        
+        // Image operation buttons
+        CropButton.Content = L10n.Get("ToolCrop");
+        RotateButton.Content = L10n.Get("ToolRotate");
+        ResizeButton.Content = L10n.Get("ToolResize");
     }
 
     private void UpdateStatus()
     {
-        StatusText.Text = $"サイズ: {_capturedImage.PixelWidth} × {_capturedImage.PixelHeight} px";
-        StepCountText.Text = _nextStepNumber > 1 ? $"次のステップ: {_nextStepNumber}" : "";
+        StatusText.Text = string.Format(L10n.Get("Size"), _capturedImage.PixelWidth, _capturedImage.PixelHeight);
+        StepCountText.Text = _nextStepNumber > 1 ? string.Format(L10n.Get("NextStep"), _nextStepNumber) : "";
     }
 
     private void UpdateUndoRedoButtons()
@@ -474,7 +510,7 @@ public partial class EditorWindow : Window
         else
         {
             _isCropMode = true;
-            StatusText.Text = "切り抜き: ドラッグで範囲を選択してください";
+            StatusText.Text = L10n.Get("CropInstruction");
             EditorCanvas.Cursor = System.Windows.Input.Cursors.Cross;
         }
     }
@@ -518,7 +554,7 @@ public partial class EditorWindow : Window
         
         if (rect.Width > 10 && rect.Height > 10)
         {
-            var result = MessageBox.Show("この範囲で切り抜きますか？", "切り抜き確認", 
+            var result = MessageBox.Show(L10n.Get("CropConfirm"), L10n.Get("CropTitle"), 
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             
             if (result == MessageBoxResult.Yes)
@@ -1165,17 +1201,26 @@ public partial class EditorWindow : Window
     private void CopyButton_Click(object sender, RoutedEventArgs e) => CopyToClipboard();
     private void SaveButton_Click(object sender, RoutedEventArgs e) => SaveToFile();
 
-    private void CopyToClipboard()
+    private async void CopyToClipboard()
     {
         try
         {
             var bitmap = RenderToBitmap();
             Clipboard.SetImage(bitmap);
-            StatusText.Text = "クリップボードにコピーしました";
+            StatusText.Text = L10n.Get("CopiedToClipboard");
+            
+            // Show visual feedback on button
+            CopyButton.Content = "✓";
+            CopyButton.Background = new SolidColorBrush(Color.FromRgb(0, 128, 0)); // Green
+            
+            await Task.Delay(800);
+            
+            CopyButton.Content = L10n.Get("Copy");
+            CopyButton.Background = new SolidColorBrush(Colors.Transparent);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"コピーに失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"{L10n.Get("CopyFailed")}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -1183,7 +1228,7 @@ public partial class EditorWindow : Window
     {
         var dialog = new SaveFileDialog
         {
-            Filter = "PNG画像|*.png|JPEG画像|*.jpg|すべてのファイル|*.*",
+            Filter = $"{L10n.Get("PngImage")}|*.png|{L10n.Get("JpegImage")}|*.jpg|{L10n.Get("AllFiles")}|*.*",
             DefaultExt = ".png",
             FileName = $"capture_{DateTime.Now:yyyyMMdd_HHmmss}"
         };
@@ -1194,11 +1239,11 @@ public partial class EditorWindow : Window
             {
                 var bitmap = RenderToBitmap();
                 SaveBitmapToFile(bitmap, dialog.FileName);
-                StatusText.Text = $"保存しました: {dialog.FileName}";
+                StatusText.Text = string.Format(L10n.Get("Saved"), dialog.FileName);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"保存に失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"{L10n.Get("SaveFailed")}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

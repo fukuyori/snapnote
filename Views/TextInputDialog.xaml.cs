@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using SnapNoteStudio.Services;
 
 namespace SnapNoteStudio.Views;
 
@@ -22,7 +23,17 @@ public partial class TextInputDialog : Window
     public TextInputDialog()
     {
         InitializeComponent();
+        ApplyLocalization();
         Loaded += (s, e) => InputTextBox.Focus();
+    }
+    
+    private void ApplyLocalization()
+    {
+        Title = L10n.Get("EnterText").TrimEnd(':');
+        PromptText.Text = L10n.Get("EnterText");
+        FontSizeLabel.Text = L10n.Get("FontSize");
+        CancelButton.Content = L10n.Get("Cancel");
+        OKButton.Content = L10n.Get("OK");
     }
 
     private void OK_Click(object sender, RoutedEventArgs e)

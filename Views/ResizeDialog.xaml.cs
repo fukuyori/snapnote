@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using SnapNoteStudio.Services;
 
 namespace SnapNoteStudio.Views;
 
@@ -16,6 +17,7 @@ public partial class ResizeDialog : Window
     public ResizeDialog(int originalWidth, int originalHeight)
     {
         InitializeComponent();
+        ApplyLocalization();
         
         _originalWidth = originalWidth;
         _originalHeight = originalHeight;
@@ -23,10 +25,21 @@ public partial class ResizeDialog : Window
         
         WidthTextBox.Text = originalWidth.ToString();
         HeightTextBox.Text = originalHeight.ToString();
-        OriginalSizeText.Text = $"元のサイズ: {originalWidth} × {originalHeight} px";
+        OriginalSizeText.Text = string.Format(L10n.Get("OriginalSize"), originalWidth, originalHeight);
         
         NewWidth = originalWidth;
         NewHeight = originalHeight;
+    }
+    
+    private void ApplyLocalization()
+    {
+        Title = L10n.Get("ResizeTitle");
+        InstructionText.Text = L10n.Get("NewSizeInstruction");
+        WidthLabel.Text = L10n.Get("Width");
+        HeightLabel.Text = L10n.Get("Height");
+        KeepAspectRatioCheckBox.Content = L10n.Get("KeepAspectRatio");
+        CancelButton.Content = L10n.Get("Cancel");
+        OKButton.Content = L10n.Get("OK");
     }
 
     private void WidthTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -77,7 +90,7 @@ public partial class ResizeDialog : Window
         }
         else
         {
-            MessageBox.Show("有効な数値を入力してください", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L10n.Get("InvalidNumber"), "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

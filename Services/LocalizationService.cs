@@ -3,7 +3,10 @@ namespace SnapNoteStudio.Services;
 public enum AppLanguage
 {
     English,
-    Japanese
+    Japanese,
+    Chinese,
+    Spanish,
+    Korean
 }
 
 public static class L10n
@@ -18,9 +21,14 @@ public static class L10n
     
     public static string Get(string key)
     {
-        return _currentLanguage == AppLanguage.Japanese 
-            ? GetJapanese(key) 
-            : GetEnglish(key);
+        return _currentLanguage switch
+        {
+            AppLanguage.Japanese => GetJapanese(key),
+            AppLanguage.Chinese => GetChinese(key),
+            AppLanguage.Spanish => GetSpanish(key),
+            AppLanguage.Korean => GetKorean(key),
+            _ => GetEnglish(key)
+        };
     }
     
     private static string GetEnglish(string key) => key switch
@@ -43,7 +51,7 @@ public static class L10n
         "Copy" => "📋 Copy",
         "Save" => "💾 Save",
         "Color" => "Color:",
-        "Thickness" => "Thickness:",
+        "Thickness" => "Size:",
         "Opacity" => "Opacity:",
         
         // Tool Groups
@@ -72,11 +80,11 @@ public static class L10n
         // Status
         "Ready" => "Ready",
         "Size" => "Size: {0} × {1} px",
-        "NextStep" => "Next step: {0}",
+        "NextStep" => "Next: {0}",
         "CopiedToClipboard" => "Copied to clipboard",
         "Saved" => "Saved: {0}",
-        "CopyFailed" => "Copy failed: {0}",
-        "SaveFailed" => "Save failed: {0}",
+        "CopyFailed" => "Copy failed",
+        "SaveFailed" => "Save failed",
         
         // Dialogs
         "EnterText" => "Enter text:",
@@ -85,7 +93,7 @@ public static class L10n
         "OK" => "OK",
         
         // Crop
-        "CropInstruction" => "Crop: Drag to select area",
+        "CropInstruction" => "Drag to select area",
         "CropConfirm" => "Crop this area?",
         "CropTitle" => "Confirm Crop",
         
@@ -95,7 +103,7 @@ public static class L10n
         "Width" => "Width:",
         "Height" => "Height:",
         "KeepAspectRatio" => "Keep aspect ratio",
-        "OriginalSize" => "Original size: {0} × {1} px",
+        "OriginalSize" => "Original: {0} × {1} px",
         "InvalidNumber" => "Please enter valid numbers",
         
         // Settings Dialog
@@ -106,8 +114,6 @@ public static class L10n
         "DefaultThickness" => "Thickness:",
         "DefaultOpacity" => "Opacity:",
         "Language" => "Language:",
-        "English" => "English",
-        "Japanese" => "日本語",
         "RestartRequired" => "Language change will take effect after restart.",
         
         // Save Dialog
@@ -120,18 +126,13 @@ public static class L10n
     
     private static string GetJapanese(string key) => key switch
     {
-        // App
         "AppTitle" => "SnapNote Studio",
         "AppStarted" => "起動しました。{0} でキャプチャを開始できます。",
         "HotkeyFailed" => "ホットキー ({0}) の登録に失敗しました。\n他のアプリケーションで使用されている可能性があります。",
         "CaptureFailed" => "スクリーンキャプチャに失敗しました。",
-        
-        // Tray Menu
         "Capture" => "キャプチャ (_C)",
         "Settings" => "設定 (_S)",
         "Exit" => "終了 (_X)",
-        
-        // Editor Window
         "EditorTitle" => "SnapNote Studio - 編集",
         "Undo" => "↩ 戻す",
         "Redo" => "↪ やり直し",
@@ -140,13 +141,9 @@ public static class L10n
         "Color" => "色:",
         "Thickness" => "太さ:",
         "Opacity" => "濃さ:",
-        
-        // Tool Groups
         "Drawing" => "描画",
         "Effects" => "効果",
         "Image" => "画像",
-        
-        // Tools
         "ToolSelect" => "選択 (V)",
         "ToolArrow" => "矢印 (A)",
         "ToolLine" => "線 (L)",
@@ -163,53 +160,251 @@ public static class L10n
         "ToolCrop" => "✂切抜",
         "ToolRotate" => "↻回転",
         "ToolResize" => "⇲縮小",
-        
-        // Status
         "Ready" => "準備完了",
         "Size" => "サイズ: {0} × {1} px",
-        "NextStep" => "次のステップ: {0}",
+        "NextStep" => "次: {0}",
         "CopiedToClipboard" => "クリップボードにコピーしました",
         "Saved" => "保存しました: {0}",
-        "CopyFailed" => "コピーに失敗しました: {0}",
-        "SaveFailed" => "保存に失敗しました: {0}",
-        
-        // Dialogs
+        "CopyFailed" => "コピーに失敗しました",
+        "SaveFailed" => "保存に失敗しました",
         "EnterText" => "テキストを入力してください:",
         "FontSize" => "フォントサイズ:",
         "Cancel" => "キャンセル",
         "OK" => "OK",
-        
-        // Crop
-        "CropInstruction" => "切り抜き: ドラッグで範囲を選択してください",
+        "CropInstruction" => "ドラッグで範囲を選択",
         "CropConfirm" => "この範囲で切り抜きますか？",
         "CropTitle" => "切り抜き確認",
-        
-        // Resize Dialog
         "ResizeTitle" => "サイズ変更",
-        "NewSizeInstruction" => "新しいサイズを入力してください:",
+        "NewSizeInstruction" => "新しいサイズを入力:",
         "Width" => "幅:",
         "Height" => "高さ:",
         "KeepAspectRatio" => "縦横比を維持",
-        "OriginalSize" => "元のサイズ: {0} × {1} px",
+        "OriginalSize" => "元: {0} × {1} px",
         "InvalidNumber" => "有効な数値を入力してください",
-        
-        // Settings Dialog
         "SettingsTitle" => "設定",
-        "CaptureHotkey" => "キャプチャショートカット:",
-        "StartWithWindows" => "Windows起動時に自動起動する",
+        "CaptureHotkey" => "ショートカット:",
+        "StartWithWindows" => "Windows起動時に自動起動",
         "DefaultSettings" => "デフォルト設定",
         "DefaultThickness" => "太さ:",
         "DefaultOpacity" => "濃さ:",
         "Language" => "言語:",
-        "English" => "English",
-        "Japanese" => "日本語",
         "RestartRequired" => "言語の変更は再起動後に反映されます。",
-        
-        // Save Dialog
         "PngImage" => "PNG画像",
         "JpegImage" => "JPEG画像",
         "AllFiles" => "すべてのファイル",
-        
+        _ => key
+    };
+    
+    private static string GetChinese(string key) => key switch
+    {
+        "AppTitle" => "SnapNote Studio",
+        "AppStarted" => "已启动。按 {0} 开始截图。",
+        "HotkeyFailed" => "热键 ({0}) 注册失败。\n可能被其他应用程序占用。",
+        "CaptureFailed" => "屏幕截图失败。",
+        "Capture" => "截图 (_C)",
+        "Settings" => "设置 (_S)",
+        "Exit" => "退出 (_X)",
+        "EditorTitle" => "SnapNote Studio - 编辑",
+        "Undo" => "↩ 撤销",
+        "Redo" => "↪ 重做",
+        "Copy" => "📋 复制",
+        "Save" => "💾 保存",
+        "Color" => "颜色:",
+        "Thickness" => "粗细:",
+        "Opacity" => "透明度:",
+        "Drawing" => "绘图",
+        "Effects" => "效果",
+        "Image" => "图像",
+        "ToolSelect" => "选择 (V)",
+        "ToolArrow" => "箭头 (A)",
+        "ToolLine" => "直线 (L)",
+        "ToolRect" => "矩形 (R)",
+        "ToolEllipse" => "椭圆 (E)",
+        "ToolText" => "文字 (T)",
+        "ToolStep" => "编号 (N)",
+        "ToolHighlighter" => "荧光笔 (H)",
+        "ToolFilled" => "填充 (F)",
+        "ToolMosaic" => "马赛克 (M)",
+        "ToolBlur" => "模糊 (B)",
+        "ToolSpotlight" => "聚光灯 (S)",
+        "ToolMagnifier" => "放大镜 (G)",
+        "ToolCrop" => "✂裁剪",
+        "ToolRotate" => "↻旋转",
+        "ToolResize" => "⇲调整",
+        "Ready" => "就绪",
+        "Size" => "尺寸: {0} × {1} px",
+        "NextStep" => "下一步: {0}",
+        "CopiedToClipboard" => "已复制到剪贴板",
+        "Saved" => "已保存: {0}",
+        "CopyFailed" => "复制失败",
+        "SaveFailed" => "保存失败",
+        "EnterText" => "请输入文字:",
+        "FontSize" => "字体大小:",
+        "Cancel" => "取消",
+        "OK" => "确定",
+        "CropInstruction" => "拖动选择区域",
+        "CropConfirm" => "裁剪此区域？",
+        "CropTitle" => "确认裁剪",
+        "ResizeTitle" => "调整大小",
+        "NewSizeInstruction" => "输入新尺寸:",
+        "Width" => "宽度:",
+        "Height" => "高度:",
+        "KeepAspectRatio" => "保持纵横比",
+        "OriginalSize" => "原始: {0} × {1} px",
+        "InvalidNumber" => "请输入有效数字",
+        "SettingsTitle" => "设置",
+        "CaptureHotkey" => "截图快捷键:",
+        "StartWithWindows" => "开机自动启动",
+        "DefaultSettings" => "默认设置",
+        "DefaultThickness" => "粗细:",
+        "DefaultOpacity" => "透明度:",
+        "Language" => "语言:",
+        "RestartRequired" => "语言更改将在重启后生效。",
+        "PngImage" => "PNG图像",
+        "JpegImage" => "JPEG图像",
+        "AllFiles" => "所有文件",
+        _ => key
+    };
+    
+    private static string GetSpanish(string key) => key switch
+    {
+        "AppTitle" => "SnapNote Studio",
+        "AppStarted" => "Iniciado. Presiona {0} para capturar.",
+        "HotkeyFailed" => "Error al registrar tecla ({0}).\nPuede estar en uso por otra aplicación.",
+        "CaptureFailed" => "Error en la captura de pantalla.",
+        "Capture" => "Capturar (_C)",
+        "Settings" => "Configuración (_S)",
+        "Exit" => "Salir (_X)",
+        "EditorTitle" => "SnapNote Studio - Editar",
+        "Undo" => "↩ Deshacer",
+        "Redo" => "↪ Rehacer",
+        "Copy" => "📋 Copiar",
+        "Save" => "💾 Guardar",
+        "Color" => "Color:",
+        "Thickness" => "Grosor:",
+        "Opacity" => "Opacidad:",
+        "Drawing" => "Dibujo",
+        "Effects" => "Efectos",
+        "Image" => "Imagen",
+        "ToolSelect" => "Seleccionar (V)",
+        "ToolArrow" => "Flecha (A)",
+        "ToolLine" => "Línea (L)",
+        "ToolRect" => "Rectángulo (R)",
+        "ToolEllipse" => "Elipse (E)",
+        "ToolText" => "Texto (T)",
+        "ToolStep" => "Número (N)",
+        "ToolHighlighter" => "Resaltador (H)",
+        "ToolFilled" => "Relleno (F)",
+        "ToolMosaic" => "Mosaico (M)",
+        "ToolBlur" => "Desenfoque (B)",
+        "ToolSpotlight" => "Foco (S)",
+        "ToolMagnifier" => "Lupa (G)",
+        "ToolCrop" => "✂Recortar",
+        "ToolRotate" => "↻Rotar",
+        "ToolResize" => "⇲Redimensionar",
+        "Ready" => "Listo",
+        "Size" => "Tamaño: {0} × {1} px",
+        "NextStep" => "Siguiente: {0}",
+        "CopiedToClipboard" => "Copiado al portapapeles",
+        "Saved" => "Guardado: {0}",
+        "CopyFailed" => "Error al copiar",
+        "SaveFailed" => "Error al guardar",
+        "EnterText" => "Ingresa el texto:",
+        "FontSize" => "Tamaño de fuente:",
+        "Cancel" => "Cancelar",
+        "OK" => "Aceptar",
+        "CropInstruction" => "Arrastra para seleccionar",
+        "CropConfirm" => "¿Recortar esta área?",
+        "CropTitle" => "Confirmar recorte",
+        "ResizeTitle" => "Redimensionar",
+        "NewSizeInstruction" => "Ingresa nuevo tamaño:",
+        "Width" => "Ancho:",
+        "Height" => "Alto:",
+        "KeepAspectRatio" => "Mantener proporción",
+        "OriginalSize" => "Original: {0} × {1} px",
+        "InvalidNumber" => "Ingresa números válidos",
+        "SettingsTitle" => "Configuración",
+        "CaptureHotkey" => "Tecla de captura:",
+        "StartWithWindows" => "Iniciar con Windows",
+        "DefaultSettings" => "Config. predeterminada",
+        "DefaultThickness" => "Grosor:",
+        "DefaultOpacity" => "Opacidad:",
+        "Language" => "Idioma:",
+        "RestartRequired" => "El cambio se aplicará tras reiniciar.",
+        "PngImage" => "Imagen PNG",
+        "JpegImage" => "Imagen JPEG",
+        "AllFiles" => "Todos los archivos",
+        _ => key
+    };
+    
+    private static string GetKorean(string key) => key switch
+    {
+        "AppTitle" => "SnapNote Studio",
+        "AppStarted" => "시작되었습니다. {0}을(를) 눌러 캡처하세요.",
+        "HotkeyFailed" => "단축키 ({0}) 등록에 실패했습니다.\n다른 프로그램에서 사용 중일 수 있습니다.",
+        "CaptureFailed" => "화면 캡처에 실패했습니다.",
+        "Capture" => "캡처 (_C)",
+        "Settings" => "설정 (_S)",
+        "Exit" => "종료 (_X)",
+        "EditorTitle" => "SnapNote Studio - 편집",
+        "Undo" => "↩ 실행취소",
+        "Redo" => "↪ 다시실행",
+        "Copy" => "📋 복사",
+        "Save" => "💾 저장",
+        "Color" => "색상:",
+        "Thickness" => "두께:",
+        "Opacity" => "불투명도:",
+        "Drawing" => "그리기",
+        "Effects" => "효과",
+        "Image" => "이미지",
+        "ToolSelect" => "선택 (V)",
+        "ToolArrow" => "화살표 (A)",
+        "ToolLine" => "선 (L)",
+        "ToolRect" => "사각형 (R)",
+        "ToolEllipse" => "타원 (E)",
+        "ToolText" => "텍스트 (T)",
+        "ToolStep" => "번호 (N)",
+        "ToolHighlighter" => "형광펜 (H)",
+        "ToolFilled" => "채우기 (F)",
+        "ToolMosaic" => "모자이크 (M)",
+        "ToolBlur" => "흐림 (B)",
+        "ToolSpotlight" => "스포트라이트 (S)",
+        "ToolMagnifier" => "돋보기 (G)",
+        "ToolCrop" => "✂자르기",
+        "ToolRotate" => "↻회전",
+        "ToolResize" => "⇲크기조정",
+        "Ready" => "준비됨",
+        "Size" => "크기: {0} × {1} px",
+        "NextStep" => "다음: {0}",
+        "CopiedToClipboard" => "클립보드에 복사됨",
+        "Saved" => "저장됨: {0}",
+        "CopyFailed" => "복사 실패",
+        "SaveFailed" => "저장 실패",
+        "EnterText" => "텍스트를 입력하세요:",
+        "FontSize" => "글꼴 크기:",
+        "Cancel" => "취소",
+        "OK" => "확인",
+        "CropInstruction" => "드래그하여 영역 선택",
+        "CropConfirm" => "이 영역을 자르시겠습니까?",
+        "CropTitle" => "자르기 확인",
+        "ResizeTitle" => "크기 조정",
+        "NewSizeInstruction" => "새 크기 입력:",
+        "Width" => "너비:",
+        "Height" => "높이:",
+        "KeepAspectRatio" => "종횡비 유지",
+        "OriginalSize" => "원본: {0} × {1} px",
+        "InvalidNumber" => "유효한 숫자를 입력하세요",
+        "SettingsTitle" => "설정",
+        "CaptureHotkey" => "캡처 단축키:",
+        "StartWithWindows" => "Windows 시작 시 실행",
+        "DefaultSettings" => "기본 설정",
+        "DefaultThickness" => "두께:",
+        "DefaultOpacity" => "불투명도:",
+        "Language" => "언어:",
+        "RestartRequired" => "언어 변경은 재시작 후 적용됩니다.",
+        "PngImage" => "PNG 이미지",
+        "JpegImage" => "JPEG 이미지",
+        "AllFiles" => "모든 파일",
         _ => key
     };
 }

@@ -40,9 +40,14 @@ public class SettingsService
         }
         
         // Apply language setting
-        L10n.CurrentLanguage = Settings.Language == "Japanese" 
-            ? AppLanguage.Japanese 
-            : AppLanguage.English;
+        L10n.CurrentLanguage = Settings.Language switch
+        {
+            "Japanese" => AppLanguage.Japanese,
+            "Chinese" => AppLanguage.Chinese,
+            "Spanish" => AppLanguage.Spanish,
+            "Korean" => AppLanguage.Korean,
+            _ => AppLanguage.English
+        };
     }
     
     public void Save()

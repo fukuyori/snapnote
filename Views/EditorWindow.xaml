@@ -148,12 +148,12 @@
                     
                     <!-- Undo/Redo -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="8,0">
-                        <Button x:Name="UndoButton" Content="↩ 戻す" 
+                        <Button x:Name="UndoButton" Content="↩ Undo" 
                                 Style="{StaticResource ActionButtonStyle}"
-                                ToolTip="元に戻す (Ctrl+Z)" Click="UndoButton_Click"/>
-                        <Button x:Name="RedoButton" Content="↪ やり直し" 
+                                ToolTip="Undo (Ctrl+Z)" Click="UndoButton_Click"/>
+                        <Button x:Name="RedoButton" Content="↪ Redo" 
                                 Style="{StaticResource ActionButtonStyle}"
-                                ToolTip="やり直し (Ctrl+Y)" Click="RedoButton_Click"/>
+                                ToolTip="Redo (Ctrl+Y)" Click="RedoButton_Click"/>
                     </StackPanel>
                     
                     <!-- Title -->
@@ -163,10 +163,10 @@
                     
                     <!-- Save/Copy -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0">
-                        <Button Content="📋 コピー" Style="{StaticResource ActionButtonStyle}"
-                                ToolTip="クリップボードにコピー (Ctrl+C)" Click="CopyButton_Click"/>
-                        <Button Content="💾 保存" Style="{StaticResource ActionButtonStyle}"
-                                ToolTip="ファイルに保存 (Ctrl+S)" Click="SaveButton_Click"
+                        <Button x:Name="CopyButton" Content="📋 Copy" Style="{StaticResource ActionButtonStyle}"
+                                ToolTip="Copy (Ctrl+C)" Click="CopyButton_Click"/>
+                        <Button x:Name="SaveButton" Content="💾 Save" Style="{StaticResource ActionButtonStyle}"
+                                ToolTip="Save (Ctrl+S)" Click="SaveButton_Click"
                                 Background="{StaticResource PrimaryBrush}" Foreground="White"/>
                     </StackPanel>
                 </Grid>
@@ -175,7 +175,7 @@
                 <Border Grid.Row="1" Background="#333333" Padding="8,4">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Color Palette -->
-                        <TextBlock Text="色:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="ColorLabel" Text="Color:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <RadioButton x:Name="ColorRed" Background="#FF0000" GroupName="Colors" 
                                      Style="{StaticResource ColorButtonStyle}" IsChecked="True"
                                      Checked="ColorButton_Checked" Tag="#FFFF0000"/>
@@ -205,7 +205,7 @@
                         <Border Width="1" Background="#555555" Margin="12,2"/>
                         
                         <!-- Stroke Width Slider -->
-                        <TextBlock Text="太さ:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="ThicknessLabel" Text="Size:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <Slider x:Name="StrokeWidthSlider" Width="80" Minimum="1" Maximum="10" Value="3"
                                 VerticalAlignment="Center" ValueChanged="StrokeWidthSlider_ValueChanged"/>
                         <TextBlock x:Name="StrokeWidthText" Text="3" Foreground="#CCCCCC" 
@@ -215,7 +215,7 @@
                         <Border Width="1" Background="#555555" Margin="12,2"/>
                         
                         <!-- Opacity/Intensity Slider -->
-                        <TextBlock Text="濃さ:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="OpacityLabel" Text="Opacity:" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <Slider x:Name="OpacitySlider" Width="80" Minimum="0.1" Maximum="1.0" Value="1.0"
                                 VerticalAlignment="Center" ValueChanged="OpacitySlider_ValueChanged"/>
                         <TextBlock x:Name="OpacityText" Text="100%" Foreground="#CCCCCC" 
@@ -230,32 +230,32 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="4">
                     <!-- Drawing Tools -->
-                    <TextBlock Text="描画" Foreground="#888888" FontSize="10" 
+                    <TextBlock x:Name="DrawingLabel" Text="Draw" Foreground="#888888" FontSize="10" 
                                Margin="4,8,4,4" FontWeight="Bold"/>
                     
                     <WrapPanel Width="112">
-                        <RadioButton x:Name="SelectToolButton" Content="▶" ToolTip="選択 (V)" 
+                        <RadioButton x:Name="SelectToolButton" Content="▶" ToolTip="Select (V)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="SelectTool_Checked"/>
-                        <RadioButton x:Name="ArrowToolButton" Content="➜" ToolTip="矢印 (A)" 
+                        <RadioButton x:Name="ArrowToolButton" Content="➜" ToolTip="Arrow (A)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      IsChecked="True" Checked="ArrowTool_Checked"/>
-                        <RadioButton x:Name="LineToolButton" Content="╱" ToolTip="線 (L)" 
+                        <RadioButton x:Name="LineToolButton" Content="╱" ToolTip="Line (L)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="LineTool_Checked"/>
-                        <RadioButton x:Name="RectToolButton" Content="□" ToolTip="四角形 (R)" 
+                        <RadioButton x:Name="RectToolButton" Content="□" ToolTip="Rectangle (R)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="RectTool_Checked"/>
-                        <RadioButton x:Name="EllipseToolButton" Content="○" ToolTip="楕円 (E)" 
+                        <RadioButton x:Name="EllipseToolButton" Content="○" ToolTip="Ellipse (E)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="EllipseTool_Checked"/>
-                        <RadioButton x:Name="TextToolButton" Content="T" ToolTip="テキスト (T)" 
+                        <RadioButton x:Name="TextToolButton" Content="T" ToolTip="Text (T)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="TextTool_Checked"/>
-                        <RadioButton x:Name="StepToolButton" Content="①" ToolTip="番号 (N)" 
+                        <RadioButton x:Name="StepToolButton" Content="①" ToolTip="Number (N)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="StepTool_Checked"/>
-                        <RadioButton x:Name="HighlighterToolButton" Content="🖍" ToolTip="蛍光ペン (H)" 
+                        <RadioButton x:Name="HighlighterToolButton" Content="🖍" ToolTip="Highlighter (H)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="HighlighterTool_Checked"/>
                     </WrapPanel>
@@ -264,23 +264,23 @@
                     <Border Height="1" Background="#444444" Margin="4,8"/>
                     
                     <!-- Effect Tools -->
-                    <TextBlock Text="効果" Foreground="#888888" FontSize="10" 
+                    <TextBlock x:Name="EffectsLabel" Text="Effects" Foreground="#888888" FontSize="10" 
                                Margin="4,4,4,4" FontWeight="Bold"/>
                     
                     <WrapPanel Width="112">
-                        <RadioButton x:Name="FilledRectToolButton" Content="■" ToolTip="塗りつぶし (F)" 
+                        <RadioButton x:Name="FilledRectToolButton" Content="■" ToolTip="Fill (F)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="FilledRectTool_Checked"/>
-                        <RadioButton x:Name="MosaicToolButton" Content="▦" ToolTip="モザイク (M)" 
+                        <RadioButton x:Name="MosaicToolButton" Content="▦" ToolTip="Mosaic (M)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="MosaicTool_Checked"/>
-                        <RadioButton x:Name="BlurToolButton" Content="◎" ToolTip="ぼかし (B)" 
+                        <RadioButton x:Name="BlurToolButton" Content="◎" ToolTip="Blur (B)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="BlurTool_Checked"/>
-                        <RadioButton x:Name="SpotlightToolButton" Content="💡" ToolTip="スポットライト (S)" 
+                        <RadioButton x:Name="SpotlightToolButton" Content="💡" ToolTip="Spotlight (S)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="SpotlightTool_Checked"/>
-                        <RadioButton x:Name="MagnifierToolButton" Content="🔍" ToolTip="拡大鏡 (G)" 
+                        <RadioButton x:Name="MagnifierToolButton" Content="🔍" ToolTip="Magnifier (G)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="MagnifierTool_Checked"/>
                     </WrapPanel>
@@ -289,17 +289,17 @@
                     <Border Height="1" Background="#444444" Margin="4,8"/>
                     
                     <!-- Image Operations -->
-                    <TextBlock Text="画像" Foreground="#888888" FontSize="10" 
+                    <TextBlock x:Name="ImageLabel" Text="Image" Foreground="#888888" FontSize="10" 
                                Margin="4,4,4,4" FontWeight="Bold"/>
                     
                     <WrapPanel Width="112">
-                        <Button Content="✂切抜" ToolTip="切り抜き" 
+                        <Button x:Name="CropButton" Content="✂Crop" ToolTip="Crop" 
                                 Style="{StaticResource ImageOpButtonStyle}"
                                 Click="CropButton_Click"/>
-                        <Button Content="↻回転" ToolTip="90度回転" 
+                        <Button x:Name="RotateButton" Content="↻Rotate" ToolTip="Rotate 90°" 
                                 Style="{StaticResource ImageOpButtonStyle}"
                                 Click="RotateButton_Click"/>
-                        <Button Content="⇲縮小" ToolTip="リサイズ" 
+                        <Button x:Name="ResizeButton" Content="⇲Resize" ToolTip="Resize" 
                                 Style="{StaticResource ImageOpButtonStyle}"
                                 Click="ResizeButton_Click"/>
                     </WrapPanel>

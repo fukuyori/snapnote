@@ -49,6 +49,9 @@
             <ComboBox x:Name="LanguageComboBox" Grid.Column="1" SelectionChanged="LanguageComboBox_SelectionChanged">
                 <ComboBoxItem Content="English" Tag="English"/>
                 <ComboBoxItem Content="日本語" Tag="Japanese"/>
+                <ComboBoxItem Content="简体中文" Tag="Chinese"/>
+                <ComboBoxItem Content="Español" Tag="Spanish"/>
+                <ComboBoxItem Content="한국어" Tag="Korean"/>
             </ComboBox>
         </Grid>
         

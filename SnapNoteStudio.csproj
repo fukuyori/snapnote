@@ -10,7 +10,7 @@
     <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <AssemblyName>SnapNoteStudio</AssemblyName>
     <RootNamespace>SnapNoteStudio</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>SnapNote Studio Team</Authors>
     <Product>SnapNote Studio</Product>
     <Description>Screenshot capture and annotation tool</Description>

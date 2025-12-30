@@ -1,7 +1,7 @@
 <Window x:Class="SnapNoteStudio.Views.TextInputDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="テキストを入力"
+        Title="Enter Text"
         Width="380"
         Height="220"
         WindowStartupLocation="CenterOwner"
@@ -17,8 +17,8 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
-        <TextBlock Grid.Row="0" 
-                   Text="テキストを入力してください:"
+        <TextBlock x:Name="PromptText" Grid.Row="0" 
+                   Text="Enter text:"
                    Margin="0,0,0,8"/>
         
         <TextBox x:Name="InputTextBox"
@@ -29,7 +29,7 @@
                  VerticalContentAlignment="Center"/>
         
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
-            <TextBlock Text="フォントサイズ:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBlock x:Name="FontSizeLabel" Text="Font size:" VerticalAlignment="Center" Margin="0,0,8,0"/>
             <ComboBox x:Name="FontSizeComboBox" Width="80" Height="28" VerticalContentAlignment="Center">
                 <ComboBoxItem Content="12" Tag="12"/>
                 <ComboBoxItem Content="14" Tag="14"/>
@@ -46,12 +46,12 @@
                     Orientation="Horizontal" 
                     HorizontalAlignment="Right"
                     Margin="0,16,0,0">
-            <Button Content="キャンセル" 
+            <Button x:Name="CancelButton" Content="Cancel" 
                     Width="80"
                     Height="28"
                     Margin="0,0,8,0"
                     Click="Cancel_Click"/>
-            <Button Content="OK" 
+            <Button x:Name="OKButton" Content="OK" 
                     Width="80"
                     Height="28"
                     Click="OK_Click"
