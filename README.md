@@ -56,31 +56,28 @@
 
 ## Installation
 
-### Option 1: Download Release
-1. Download the latest release from the [Releases](../../releases) page
-2. Extract the ZIP file
-3. Run `SnapNoteStudio.exe`
+### Option 1: Download Installer
+1. Download the installer (`SnapNoteStudio_Setup_x.x.x.exe`) from the [Latest Release](https://github.com/fukuyori/snapnote/releases/latest) page
+2. Run the installer and follow the on-screen instructions
 
 ### Option 2: Build from Source
 
 #### Prerequisites
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Inno Setup](https://jrsoftware.org/isdownload.php) (only required for creating the installer)
 - Visual Studio 2022 or VS Code (optional)
 
 #### Build Steps
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/SnapNoteStudio.git
-cd SnapNoteStudio
+git clone https://github.com/fukuyori/snapnote.git
+cd snapnote
 
 # Restore dependencies
 dotnet restore
 
-# Build (Debug)
-dotnet build -c Debug
-
-# Build (Release)
+# Build
 dotnet build -c Release
 
 # Run
@@ -90,10 +87,23 @@ dotnet run -c Release
 #### Publish as Single Executable
 
 ```bash
-# Create self-contained single-file executable
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet publish -c Release
 
-# Output will be in: bin/Release/net8.0-windows/win-x64/publish/
+# Output: bin/Release/net8.0-windows/win-x64/publish/SnapNoteStudio.exe
+```
+
+#### Creating the Installer
+
+With Inno Setup installed, run the following:
+
+```bash
+# 1. Publish the Release build
+dotnet publish -c Release
+
+# 2. Create the installer
+iscc installer.iss
+
+# Output: installer_output/SnapNoteStudio_Setup_x.x.x.exe
 ```
 
 ## Usage
@@ -120,11 +130,15 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 
 ### Settings
 
-Right-click the system tray icon and select "Settings" to:
-- Change the capture hotkey
-- Enable/disable Windows startup
-- Set default tool settings
-- Change language (English/Japanese)
+Right-click the system tray icon and select "Settings" to open the settings dialog.
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Language | Switch the display language. Supports English / 日本語 / 简体中文 / Español / 한국어 | English |
+| Capture hotkey | Select the shortcut key to start screen capture. Available options: PrintScreen / Ctrl+PrintScreen / Alt+PrintScreen / Ctrl+Shift+S / Ctrl+Shift+C / Ctrl+Alt+S / F12 / Ctrl+F12 | Ctrl+Shift+S |
+| Start with Windows | When checked, SnapNote Studio will automatically start when Windows starts. Registered via registry (HKCU) | OFF |
+| Thickness | Set the default stroke thickness for drawing tools (1–10) | 3 |
+| Opacity | Set the default opacity for drawing tools (10%–100%) | 100% |
 
 ## Keyboard Shortcuts
 

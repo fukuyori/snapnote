@@ -56,31 +56,28 @@
 
 ## インストール
 
-### 方法1: リリースをダウンロード
-1. [Releases](../../releases) ページから最新のリリースをダウンロード
-2. ZIPファイルを展開
-3. `SnapNoteStudio.exe` を実行
+### 方法1: インストーラーをダウンロード
+1. [最新リリース](https://github.com/fukuyori/snapnote/releases/latest) ページからインストーラー（`SnapNoteStudio_Setup_x.x.x.exe`）をダウンロード
+2. インストーラーを実行し、画面の指示に従ってインストール
 
 ### 方法2: ソースからビルド
 
 #### 必要なもの
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Inno Setup](https://jrsoftware.org/isdownload.php)（インストーラー作成時のみ）
 - Visual Studio 2022 または VS Code（オプション）
 
 #### ビルド手順
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/yourusername/SnapNoteStudio.git
-cd SnapNoteStudio
+git clone https://github.com/fukuyori/snapnote.git
+cd snapnote
 
 # 依存関係を復元
 dotnet restore
 
-# ビルド（Debug）
-dotnet build -c Debug
-
-# ビルド（Release）
+# ビルド
 dotnet build -c Release
 
 # 実行
@@ -90,10 +87,23 @@ dotnet run -c Release
 #### 単一実行ファイルとして発行
 
 ```bash
-# 自己完結型の単一ファイル実行可能ファイルを作成
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet publish -c Release
 
-# 出力先: bin/Release/net8.0-windows/win-x64/publish/
+# 出力先: bin/Release/net8.0-windows/win-x64/publish/SnapNoteStudio.exe
+```
+
+#### インストーラーの作成
+
+Inno Setup をインストールした状態で以下を実行します：
+
+```bash
+# 1. Release ビルドを発行
+dotnet publish -c Release
+
+# 2. インストーラーを作成
+iscc installer.iss
+
+# 出力先: installer_output/SnapNoteStudio_Setup_x.x.x.exe
 ```
 
 ## 使い方
@@ -120,11 +130,15 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 
 ### 設定
 
-システムトレイアイコンを右クリックして「設定」を選択すると、以下の設定が可能です：
-- キャプチャホットキーの変更
-- Windows起動時の自動起動の有効/無効
-- デフォルトのツール設定
-- 言語の変更（英語/日本語）
+システムトレイアイコンを右クリックして「設定」を選択すると、設定画面が開きます。
+
+| 設定項目 | 説明 | 初期値 |
+|----------|------|--------|
+| Language（言語） | 表示言語を切り替えます。English / 日本語 / 简体中文 / Español / 한국어 に対応 | English |
+| Capture hotkey（キャプチャホットキー） | スクリーンキャプチャを開始するショートカットキーを選択します。PrintScreen / Ctrl+PrintScreen / Alt+PrintScreen / Ctrl+Shift+S / Ctrl+Shift+C / Ctrl+Alt+S / F12 / Ctrl+F12 から選択可能 | Ctrl+Shift+S |
+| Start with Windows（Windows起動時に自動起動） | チェックを入れると、Windows起動時にSnapNote Studioを自動的に起動します。レジストリ（HKCU）に登録されます | OFF |
+| Thickness（線の太さ） | 描画ツールのデフォルトの線の太さを設定します（1〜10） | 3 |
+| Opacity（不透明度） | 描画ツールのデフォルトの不透明度を設定します（10%〜100%） | 100% |
 
 ## キーボードショートカット
 

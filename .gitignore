@@ -87,6 +87,7 @@ nCrunchTemp_*
 *.msix
 *.msm
 *.msp
+installer_output/
 
 # Publish profiles
 PublishScripts/
