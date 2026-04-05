@@ -41,5 +41,14 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{#MyAppName} をアンインストール"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
+[InstallDelete]
+Type: files; Name: "{userstartup}\{#MyAppName}.lnk"
+
+[UninstallDelete]
+Type: files; Name: "{userstartup}\{#MyAppName}.lnk"
+
+[UninstallRun]
+Filename: "reg.exe"; Parameters: "delete ""HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" /v ""SnapNoteStudio"" /f"; Flags: runhidden
+
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} を起動"; Flags: nowait postinstall skipifsilent
