@@ -149,7 +149,7 @@ public partial class App : Application
             return;
         }
         
-        _overlayWindow = new OverlayWindow(screenCapture);
+        _overlayWindow = new OverlayWindow(screenCapture, GetLastCaptureRegion());
         _overlayWindow.CaptureCompleted += OnCaptureCompleted;
         _overlayWindow.CaptureCancelled += OnCaptureCancelled;
         _overlayWindow.Show();
@@ -162,10 +162,36 @@ public partial class App : Application
 
         if (e.CapturedImage != null && e.CapturedImage.PixelWidth > 0 && e.CapturedImage.PixelHeight > 0)
         {
+            SaveLastCaptureRegion(e.CaptureRegion);
+
             var editorWindow = new EditorWindow(e.CapturedImage, e.CaptureRegion, _settingsService);
             editorWindow.Show();
             editorWindow.Activate();
         }
+    }
+
+    private Rect? GetLastCaptureRegion()
+    {
+        var region = _settingsService.Settings.LastCaptureRegion;
+        if (region == null || region.Width <= 5 || region.Height <= 5)
+            return null;
+
+        return new Rect(region.X, region.Y, region.Width, region.Height);
+    }
+
+    private void SaveLastCaptureRegion(Rect region)
+    {
+        if (region.Width <= 5 || region.Height <= 5)
+            return;
+
+        _settingsService.Settings.LastCaptureRegion = new SavedCaptureRegion
+        {
+            X = region.X,
+            Y = region.Y,
+            Width = region.Width,
+            Height = region.Height
+        };
+        _settingsService.Save();
     }
 
     private void OnCaptureCancelled(object? sender, EventArgs e)

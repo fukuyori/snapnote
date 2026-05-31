@@ -1119,7 +1119,7 @@ public partial class EditorWindow : Window
 
     #region Keyboard Shortcuts
 
-    private void Window_KeyDown(object sender, KeyEventArgs e)
+    private async void Window_KeyDown(object sender, KeyEventArgs e)
     {
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
@@ -1127,8 +1127,28 @@ public partial class EditorWindow : Window
             {
                 case Key.Z: _undoRedo.Undo(); RedrawAnnotations(); e.Handled = true; break;
                 case Key.Y: _undoRedo.Redo(); RedrawAnnotations(); e.Handled = true; break;
-                case Key.C: CopyToClipboard(); e.Handled = true; break;
-                case Key.S: SaveToFile(); e.Handled = true; break;
+                case Key.C:
+                    await CopyToClipboard();
+                    e.Handled = true;
+                    break;
+                case Key.X:
+                    if (await CopyToClipboard())
+                        Close();
+                    e.Handled = true;
+                    break;
+                case Key.S:
+                    SaveToFile();
+                    e.Handled = true;
+                    break;
+                case Key.W:
+                    if (SaveToFile())
+                        Close();
+                    e.Handled = true;
+                    break;
+                case Key.Q:
+                    Close();
+                    e.Handled = true;
+                    break;
             }
         }
         else if (e.Key == Key.Delete && _selectedAnnotation != null)
@@ -1198,10 +1218,10 @@ public partial class EditorWindow : Window
 
     #region Save/Copy
 
-    private void CopyButton_Click(object sender, RoutedEventArgs e) => CopyToClipboard();
+    private async void CopyButton_Click(object sender, RoutedEventArgs e) => await CopyToClipboard();
     private void SaveButton_Click(object sender, RoutedEventArgs e) => SaveToFile();
 
-    private async void CopyToClipboard()
+    private async Task<bool> CopyToClipboard()
     {
         try
         {
@@ -1217,34 +1237,37 @@ public partial class EditorWindow : Window
             
             CopyButton.Content = L10n.Get("Copy");
             CopyButton.Background = new SolidColorBrush(Colors.Transparent);
+            return true;
         }
         catch (Exception ex)
         {
             MessageBox.Show($"{L10n.Get("CopyFailed")}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
         }
     }
 
-    private void SaveToFile()
+    private bool SaveToFile()
     {
-        var dialog = new SaveFileDialog
+        try
         {
-            Filter = $"{L10n.Get("PngImage")}|*.png|{L10n.Get("JpegImage")}|*.jpg|{L10n.Get("AllFiles")}|*.*",
-            DefaultExt = ".png",
-            FileName = $"capture_{DateTime.Now:yyyyMMdd_HHmmss}"
-        };
-        
-        if (dialog.ShowDialog() == true)
+            var saveDirectory = string.IsNullOrWhiteSpace(_settingsService?.Settings.SaveDirectory)
+                ? SettingsService.DefaultSaveDirectory
+                : _settingsService.Settings.SaveDirectory;
+
+            System.IO.Directory.CreateDirectory(saveDirectory);
+
+            var fileName = $"capture_{DateTime.Now:yyyyMMdd_HHmmssfff}.png";
+            var filePath = System.IO.Path.Combine(saveDirectory, fileName);
+
+            var bitmap = RenderToBitmap();
+            SaveBitmapToFile(bitmap, filePath);
+            StatusText.Text = string.Format(L10n.Get("Saved"), filePath);
+            return true;
+        }
+        catch (Exception ex)
         {
-            try
-            {
-                var bitmap = RenderToBitmap();
-                SaveBitmapToFile(bitmap, dialog.FileName);
-                StatusText.Text = string.Format(L10n.Get("Saved"), dialog.FileName);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"{L10n.Get("SaveFailed")}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            MessageBox.Show($"{L10n.Get("SaveFailed")}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
         }
     }
 

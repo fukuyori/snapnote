@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using SnapNoteStudio.Services;
+using WinForms = System.Windows.Forms;
 
 namespace SnapNoteStudio.Views;
 
@@ -33,6 +34,8 @@ public partial class SettingsDialog : Window
         LanguageLabel.Text = L10n.Get("Language");
         HotkeyLabel.Text = L10n.Get("CaptureHotkey");
         StartupCheckBox.Content = L10n.Get("StartWithWindows");
+        SaveDirectoryLabel.Text = L10n.Get("SaveDirectory");
+        BrowseButton.Content = L10n.Get("Browse");
         DefaultSettingsGroup.Header = L10n.Get("DefaultSettings");
         ThicknessLabel.Text = L10n.Get("DefaultThickness");
         OpacityLabel.Text = L10n.Get("DefaultOpacity");
@@ -73,6 +76,11 @@ public partial class SettingsDialog : Window
         
         // Startup
         StartupCheckBox.IsChecked = _settingsService.Settings.StartWithWindows;
+
+        // Save location
+        SaveDirectoryTextBox.Text = string.IsNullOrWhiteSpace(_settingsService.Settings.SaveDirectory)
+            ? SettingsService.DefaultSaveDirectory
+            : _settingsService.Settings.SaveDirectory;
         
         // Defaults
         DefaultStrokeSlider.Value = _settingsService.Settings.DefaultStrokeWidth;
@@ -124,6 +132,11 @@ public partial class SettingsDialog : Window
         
         // Save startup
         _settingsService.Settings.StartWithWindows = StartupCheckBox.IsChecked == true;
+
+        // Save location
+        _settingsService.Settings.SaveDirectory = string.IsNullOrWhiteSpace(SaveDirectoryTextBox.Text)
+            ? SettingsService.DefaultSaveDirectory
+            : SaveDirectoryTextBox.Text.Trim();
         
         // Save defaults
         _settingsService.Settings.DefaultStrokeWidth = DefaultStrokeSlider.Value;
@@ -149,5 +162,22 @@ public partial class SettingsDialog : Window
         
         DialogResult = false;
         Close();
+    }
+
+    private void Browse_Click(object sender, RoutedEventArgs e)
+    {
+        using var dialog = new WinForms.FolderBrowserDialog
+        {
+            Description = L10n.Get("SelectSaveDirectory"),
+            SelectedPath = string.IsNullOrWhiteSpace(SaveDirectoryTextBox.Text)
+                ? SettingsService.DefaultSaveDirectory
+                : SaveDirectoryTextBox.Text,
+            UseDescriptionForTitle = true
+        };
+
+        if (dialog.ShowDialog() == WinForms.DialogResult.OK)
+        {
+            SaveDirectoryTextBox.Text = dialog.SelectedPath;
+        }
     }
 }

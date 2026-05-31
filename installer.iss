@@ -1,7 +1,7 @@
 ; SnapNote Studio Inno Setup Script
 
 #define MyAppName "SnapNote Studio"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "2.0.0"
 #define MyAppPublisher "SnapNote Studio Team"
 #define MyAppExeName "SnapNoteStudio.exe"
 #define MyAppDescription "Screenshot capture and annotation tool"
@@ -48,7 +48,7 @@ Type: files; Name: "{userstartup}\{#MyAppName}.lnk"
 Type: files; Name: "{userstartup}\{#MyAppName}.lnk"
 
 [UninstallRun]
-Filename: "reg.exe"; Parameters: "delete ""HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" /v ""SnapNoteStudio"" /f"; Flags: runhidden
+Filename: "reg.exe"; Parameters: "delete ""HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" /v ""SnapNoteStudio"" /f"; Flags: runhidden; RunOnceId: "RemoveStartupRegistryValue"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} を起動"; Flags: nowait postinstall skipifsilent

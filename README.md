@@ -12,6 +12,8 @@
 
 ### Capture
 - **Region selection**: Click and drag to select any area of your screen
+- **Window selection**: Click a window to capture the visible window bounds
+- **Previous region capture**: Press `Space` before dragging to show the previous capture region, then press `Enter` to capture it again
 - **Multi-monitor support**: Works seamlessly across multiple displays
 - **High DPI support**: Crisp captures on high-resolution displays
 
@@ -44,10 +46,11 @@
 ### Additional Features
 - **Undo/Redo**: Full history support (Ctrl+Z / Ctrl+Y)
 - **Copy to clipboard**: Quick sharing (Ctrl+C)
-- **Save to file**: PNG or JPEG format (Ctrl+S)
+- **Save to file**: Automatically saves PNG files with timestamp-based names (Ctrl+S)
+- **Save location setting**: Choose the folder used for automatic saves
 - **Customizable hotkey**: Choose your preferred capture shortcut
 - **System tray**: Runs quietly in the background
-- **Multi-language**: English and Japanese support
+- **Multi-language**: English, Japanese, Simplified Chinese, Spanish, and Korean support
 
 ## System Requirements
 
@@ -86,8 +89,8 @@ dotnet run -c Release
 
 #### Publish as Single Executable
 
-```bash
-dotnet publish -c Release
+```powershell
+.\scripts\build-release.ps1
 
 # Output: bin/Release/net8.0-windows/win-x64/publish/SnapNoteStudio.exe
 ```
@@ -96,14 +99,10 @@ dotnet publish -c Release
 
 With Inno Setup installed, run the following:
 
-```bash
-# 1. Publish the Release build
-dotnet publish -c Release
+```powershell
+.\scripts\build-installer.ps1
 
-# 2. Create the installer
-iscc installer.iss
-
-# Output: installer_output/SnapNoteStudio_Setup_x.x.x.exe
+# Output: installer_output/SnapNoteStudio_Setup_2.0.0.exe
 ```
 
 ## Usage
@@ -116,8 +115,9 @@ iscc installer.iss
 ### Capture Mode
 
 1. Click and drag to select the area you want to capture
-2. Release the mouse button to open the editor
-3. Press `Escape` to cancel
+2. Click a window without dragging to capture that window
+3. Press `Space` before dragging to show the previous capture region, then press `Enter` to capture it
+4. Press `Escape` to cancel
 
 ### Editor
 
@@ -126,7 +126,8 @@ iscc installer.iss
 3. Draw annotations on the image
 4. Use `Ctrl+Z` to undo, `Ctrl+Y` to redo
 5. Click "Copy" or press `Ctrl+C` to copy to clipboard
-6. Click "Save" or press `Ctrl+S` to save to file
+6. Click "Save" or press `Ctrl+S` to save to the configured folder
+7. Use `Ctrl+X`, `Ctrl+W`, or `Ctrl+Q` for quick close workflows
 
 ### Settings
 
@@ -137,6 +138,7 @@ Right-click the system tray icon and select "Settings" to open the settings dial
 | Language | Switch the display language. Supports English / 日本語 / 简体中文 / Español / 한국어 | English |
 | Capture hotkey | Select the shortcut key to start screen capture. Available options: PrintScreen / Ctrl+PrintScreen / Alt+PrintScreen / Ctrl+Shift+S / Ctrl+Shift+C / Ctrl+Alt+S / F12 / Ctrl+F12 | Ctrl+Shift+S |
 | Start with Windows | When checked, SnapNote Studio will automatically start when Windows starts. Registered via registry (HKCU) | OFF |
+| Save location | Folder used by automatic PNG saves. The folder is created when needed | Pictures\SnapNote Studio |
 | Thickness | Set the default stroke thickness for drawing tools (1–10) | 3 |
 | Opacity | Set the default opacity for drawing tools (10%–100%) | 100% |
 
@@ -153,10 +155,20 @@ Right-click the system tray icon and select "Settings" to open the settings dial
 | Ctrl+Z | Undo |
 | Ctrl+Y | Redo |
 | Ctrl+C | Copy to clipboard |
+| Ctrl+X | Copy to clipboard and close |
 | Ctrl+S | Save to file |
+| Ctrl+W | Save to file and close |
+| Ctrl+Q | Close without saving |
 | Delete | Delete selected annotation |
 | Escape | Deselect / Cancel crop mode |
 | V, A, L, R, E, T, N, H, F, M, B, S, G | Tool shortcuts |
+
+### Capture Overlay
+| Shortcut | Action |
+|----------|--------|
+| Space | Show the previous capture region before dragging |
+| Enter | Capture the displayed previous region |
+| Escape | Cancel capture |
 
 ## Configuration
 

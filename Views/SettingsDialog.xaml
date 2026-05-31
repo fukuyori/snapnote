@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings"
         Width="420"
-        Height="420"
+        Height="480"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#2D2D30">
@@ -21,10 +21,15 @@
             <Setter Property="Foreground" Value="#CCCCCC"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
     </Window.Resources>
     
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -70,9 +75,27 @@
         <CheckBox x:Name="StartupCheckBox" Grid.Row="3" 
                   Content="Start with Windows" 
                   Margin="0,0,0,16"/>
+
+        <!-- Save Location Setting -->
+        <Grid Grid.Row="4" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="SaveDirectoryLabel" Grid.Column="0" Text="Save location:"/>
+            <Grid Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="72"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="SaveDirectoryTextBox" Grid.Column="0" Margin="0,0,8,0"/>
+                <Button x:Name="BrowseButton" Grid.Column="1" Content="Browse" Click="Browse_Click"/>
+            </Grid>
+        </Grid>
         
         <!-- Default Settings -->
-        <GroupBox x:Name="DefaultSettingsGroup" Grid.Row="4" Header="Default Settings" 
+        <GroupBox x:Name="DefaultSettingsGroup" Grid.Row="5" Header="Default Settings" 
                   Foreground="#888888" BorderBrush="#555555" Margin="0,0,0,16">
             <StackPanel Margin="8">
                 <Grid Margin="0,8,0,8">
@@ -106,7 +129,7 @@
         </GroupBox>
         
         <!-- Buttons -->
-        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="CancelButton" Content="Cancel" Width="90" Height="32" Margin="0,0,8,0"
                     Click="Cancel_Click"/>
             <Button x:Name="SaveButton" Content="Save" Width="90" Height="32" 

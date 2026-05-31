@@ -11,10 +11,24 @@ public class AppSettings
     public double DefaultStrokeWidth { get; set; } = 3;
     public string DefaultColor { get; set; } = "#FFFF0000";
     public string Language { get; set; } = "English";
+    public string SaveDirectory { get; set; } = SettingsService.DefaultSaveDirectory;
+    public SavedCaptureRegion? LastCaptureRegion { get; set; }
+}
+
+public class SavedCaptureRegion
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Width { get; set; }
+    public double Height { get; set; }
 }
 
 public class SettingsService
 {
+    public static string DefaultSaveDirectory => System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+        "SnapNote Studio");
+
     private static readonly string SettingsPath = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "SnapNoteStudio", "settings.json");
@@ -48,6 +62,11 @@ public class SettingsService
             "Korean" => AppLanguage.Korean,
             _ => AppLanguage.English
         };
+
+        if (string.IsNullOrWhiteSpace(Settings.SaveDirectory))
+        {
+            Settings.SaveDirectory = DefaultSaveDirectory;
+        }
     }
     
     public void Save()

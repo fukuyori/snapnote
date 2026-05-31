@@ -12,6 +12,8 @@
 
 ### キャプチャ
 - **範囲選択**: クリック＆ドラッグで画面の任意の領域を選択
+- **ウインドウ選択**: ウインドウをクリックして、表示中のウインドウ範囲をキャプチャ
+- **前回範囲の再利用**: ドラッグ前に `Space` を押すと前回のキャプチャ範囲を表示し、`Enter` で再キャプチャ
 - **マルチモニター対応**: 複数のディスプレイでシームレスに動作
 - **高DPI対応**: 高解像度ディスプレイでも鮮明にキャプチャ
 
@@ -44,10 +46,11 @@
 ### その他の機能
 - **元に戻す/やり直し**: 完全な履歴サポート（Ctrl+Z / Ctrl+Y）
 - **クリップボードにコピー**: 素早く共有（Ctrl+C）
-- **ファイルに保存**: PNG または JPEG 形式（Ctrl+S）
+- **ファイルに保存**: 日時ベースのファイル名で PNG を自動保存（Ctrl+S）
+- **保存場所の設定**: 自動保存に使うフォルダーを設定可能
 - **カスタマイズ可能なホットキー**: お好みのキャプチャショートカットを選択
 - **システムトレイ**: バックグラウンドで静かに動作
-- **多言語対応**: 英語と日本語をサポート
+- **多言語対応**: 英語、日本語、簡体字中国語、スペイン語、韓国語をサポート
 
 ## システム要件
 
@@ -86,8 +89,8 @@ dotnet run -c Release
 
 #### 単一実行ファイルとして発行
 
-```bash
-dotnet publish -c Release
+```powershell
+.\scripts\build-release.ps1
 
 # 出力先: bin/Release/net8.0-windows/win-x64/publish/SnapNoteStudio.exe
 ```
@@ -96,14 +99,10 @@ dotnet publish -c Release
 
 Inno Setup をインストールした状態で以下を実行します：
 
-```bash
-# 1. Release ビルドを発行
-dotnet publish -c Release
+```powershell
+.\scripts\build-installer.ps1
 
-# 2. インストーラーを作成
-iscc installer.iss
-
-# 出力先: installer_output/SnapNoteStudio_Setup_x.x.x.exe
+# 出力先: installer_output/SnapNoteStudio_Setup_2.0.0.exe
 ```
 
 ## 使い方
@@ -116,8 +115,9 @@ iscc installer.iss
 ### キャプチャモード
 
 1. クリック＆ドラッグでキャプチャしたい領域を選択
-2. マウスボタンを離すとエディターが開く
-3. `Escape`キーでキャンセル
+2. ドラッグせずにウインドウをクリックすると、そのウインドウをキャプチャ
+3. ドラッグ前に `Space` を押すと前回の範囲を表示し、`Enter` でキャプチャ
+4. `Escape`キーでキャンセル
 
 ### エディター
 
@@ -126,7 +126,8 @@ iscc installer.iss
 3. 画像上に注釈を描画
 4. `Ctrl+Z`で元に戻す、`Ctrl+Y`でやり直し
 5. 「コピー」をクリックまたは`Ctrl+C`でクリップボードにコピー
-6. 「保存」をクリックまたは`Ctrl+S`でファイルに保存
+6. 「保存」をクリックまたは`Ctrl+S`で設定した保存先へ保存
+7. `Ctrl+X`、`Ctrl+W`、`Ctrl+Q`で終了を含む操作を実行
 
 ### 設定
 
@@ -137,6 +138,7 @@ iscc installer.iss
 | Language（言語） | 表示言語を切り替えます。English / 日本語 / 简体中文 / Español / 한국어 に対応 | English |
 | Capture hotkey（キャプチャホットキー） | スクリーンキャプチャを開始するショートカットキーを選択します。PrintScreen / Ctrl+PrintScreen / Alt+PrintScreen / Ctrl+Shift+S / Ctrl+Shift+C / Ctrl+Alt+S / F12 / Ctrl+F12 から選択可能 | Ctrl+Shift+S |
 | Start with Windows（Windows起動時に自動起動） | チェックを入れると、Windows起動時にSnapNote Studioを自動的に起動します。レジストリ（HKCU）に登録されます | OFF |
+| Save location（保存場所） | PNG の自動保存に使うフォルダーを設定します。フォルダーは必要に応じて作成されます | ピクチャ\SnapNote Studio |
 | Thickness（線の太さ） | 描画ツールのデフォルトの線の太さを設定します（1〜10） | 3 |
 | Opacity（不透明度） | 描画ツールのデフォルトの不透明度を設定します（10%〜100%） | 100% |
 
@@ -153,10 +155,20 @@ iscc installer.iss
 | Ctrl+Z | 元に戻す |
 | Ctrl+Y | やり直し |
 | Ctrl+C | クリップボードにコピー |
+| Ctrl+X | クリップボードにコピーして終了 |
 | Ctrl+S | ファイルに保存 |
+| Ctrl+W | ファイルに保存して終了 |
+| Ctrl+Q | 保存せずに終了 |
 | Delete | 選択した注釈を削除 |
 | Escape | 選択解除 / 切り抜きモードをキャンセル |
 | V, A, L, R, E, T, N, H, F, M, B, S, G | ツールショートカット |
+
+### キャプチャオーバーレイ
+| ショートカット | 動作 |
+|----------------|------|
+| Space | ドラッグ前に前回のキャプチャ範囲を表示 |
+| Enter | 表示中の前回範囲をキャプチャ |
+| Escape | キャプチャをキャンセル |
 
 ## 設定ファイル
 

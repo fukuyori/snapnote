@@ -48,6 +48,21 @@
                        FontSize="12"
                        FontFamily="Segoe UI"/>
         </Border>
+
+        <!-- Cursor-following mode message -->
+        <Border x:Name="CursorMessage"
+                Background="#F01A1A2E"
+                BorderBrush="#4A7DFF"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8,5"
+                IsHitTestVisible="False"
+                Visibility="Collapsed">
+            <TextBlock x:Name="CursorMessageText"
+                       Foreground="White"
+                       FontSize="12"
+                       FontFamily="Segoe UI"/>
+        </Border>
         
         <!-- Instructions -->
         <Border x:Name="Instructions"
@@ -62,10 +77,10 @@
                            FontWeight="SemiBold"
                            Foreground="#4A7DFF"
                            Margin="0,0,0,8"/>
-                <TextBlock Text="ドラッグで範囲を選択" 
+                <TextBlock Text="ドラッグで範囲を選択 / クリックでウインドウ選択" 
                            Foreground="#1A1A2E"
                            FontSize="12"/>
-                <TextBlock Text="Esc キーでキャンセル" 
+                <TextBlock Text="Space キーで前回範囲、Enter キーで確定、Esc キーでキャンセル" 
                            Foreground="#6B7280"
                            FontSize="11"
                            Margin="0,4,0,0"/>
