@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.1.0 - 2026-06-22
+
+### Added
+- Added mouse wheel zoom in the editor, with a maximum zoom level of 1200%.
+- Added image viewport panning with middle-button and right-button dragging.
+- Added a Move tool that is selected by default when the editor opens. In Move mode, left-button dragging pans the image viewport.
+- Added a gentle Sharpen image operation.
+
+### Changed
+- Sharpen now participates in the undo/redo history, so `Ctrl+Z` restores the previous image and `Ctrl+Y` reapplies it.
+- Installer version and application package version are now `2.1.0`.
+
 ## 2.0.0 - 2026-05-31
 
 ### Added

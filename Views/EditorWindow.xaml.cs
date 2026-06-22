@@ -12,16 +12,22 @@ namespace SnapNoteStudio.Views;
 
 public partial class EditorWindow : Window
 {
+    private const double MinZoomScale = 0.25;
+    private const double MaxZoomScale = 12.0;
+    private const double ZoomStep = 1.1;
+    private const double EditorMargin = 20.0;
+
     private BitmapSource _capturedImage;
     private readonly Rect _captureRegion;
     private readonly List<Annotation> _annotations = new();
     private readonly UndoRedoService _undoRedo = new();
     private readonly SettingsService? _settingsService;
+    private double _zoomScale = 1.0;
 
     // Current tool state
-    private enum Tool { Select, Arrow, Line, Rectangle, Ellipse, Text, Step, Highlighter, 
+    private enum Tool { Pan, Select, Arrow, Line, Rectangle, Ellipse, Text, Step, Highlighter,
                         FilledRect, Mosaic, Blur, Spotlight, Magnifier }
-    private Tool _currentTool = Tool.Arrow;
+    private Tool _currentTool = Tool.Pan;
     private Color _currentColor = Colors.Red;
     private double _currentStrokeWidth = 3;
     private double _currentOpacity = 1.0;
@@ -36,6 +42,13 @@ public partial class EditorWindow : Window
     // For dragging
     private bool _isDragging;
     private Point _dragStartPoint;
+
+    // For panning the editor viewport
+    private bool _isPanning;
+    private MouseButton _panButton;
+    private Point _panStartPoint;
+    private double _panStartHorizontalOffset;
+    private double _panStartVerticalOffset;
 
     // Crop mode
     private bool _isCropMode;
@@ -107,6 +120,7 @@ public partial class EditorWindow : Window
         ImageLabel.Text = L10n.Get("Image");
         
         // Tool tooltips
+        PanToolButton.ToolTip = L10n.Get("ToolPan");
         SelectToolButton.ToolTip = L10n.Get("ToolSelect");
         ArrowToolButton.ToolTip = L10n.Get("ToolArrow");
         LineToolButton.ToolTip = L10n.Get("ToolLine");
@@ -125,11 +139,14 @@ public partial class EditorWindow : Window
         CropButton.Content = L10n.Get("ToolCrop");
         RotateButton.Content = L10n.Get("ToolRotate");
         ResizeButton.Content = L10n.Get("ToolResize");
+        SharpenButton.Content = L10n.Get("ToolSharpen");
     }
 
     private void UpdateStatus()
     {
-        StatusText.Text = string.Format(L10n.Get("Size"), _capturedImage.PixelWidth, _capturedImage.PixelHeight);
+        var sizeText = string.Format(L10n.Get("Size"), _capturedImage.PixelWidth, _capturedImage.PixelHeight);
+        var zoomText = string.Format(L10n.Get("Zoom"), _zoomScale * 100);
+        StatusText.Text = $"{sizeText} | {zoomText}";
         StepCountText.Text = _nextStepNumber > 1 ? string.Format(L10n.Get("NextStep"), _nextStepNumber) : "";
     }
 
@@ -141,6 +158,7 @@ public partial class EditorWindow : Window
 
     #region Tool Selection
 
+    private void PanTool_Checked(object sender, RoutedEventArgs e) => _currentTool = Tool.Pan;
     private void SelectTool_Checked(object sender, RoutedEventArgs e) => _currentTool = Tool.Select;
     private void ArrowTool_Checked(object sender, RoutedEventArgs e) => _currentTool = Tool.Arrow;
     private void LineTool_Checked(object sender, RoutedEventArgs e) => _currentTool = Tool.Line;
@@ -269,6 +287,106 @@ public partial class EditorWindow : Window
         {
             FinishDrawing();
         }
+    }
+
+    private void EditorScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (_isDrawing || _isDragging || _isPanning)
+            return;
+
+        var rawZoomPoint = e.GetPosition(EditorCanvas);
+        var zoomPoint = new Point(
+            Math.Clamp(rawZoomPoint.X, 0, EditorCanvas.ActualWidth),
+            Math.Clamp(rawZoomPoint.Y, 0, EditorCanvas.ActualHeight));
+        var viewportPoint = e.GetPosition(EditorScrollViewer);
+        var oldZoom = _zoomScale;
+        var zoomFactor = e.Delta > 0 ? ZoomStep : 1 / ZoomStep;
+        var newZoom = Math.Clamp(_zoomScale * zoomFactor, MinZoomScale, MaxZoomScale);
+
+        if (Math.Abs(newZoom - oldZoom) < 0.001)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        _zoomScale = newZoom;
+        EditorZoomTransform.ScaleX = _zoomScale;
+        EditorZoomTransform.ScaleY = _zoomScale;
+        EditorContainer.UpdateLayout();
+
+        EditorScrollViewer.ScrollToHorizontalOffset(
+            Math.Max(0, EditorMargin + zoomPoint.X * _zoomScale - viewportPoint.X));
+        EditorScrollViewer.ScrollToVerticalOffset(
+            Math.Max(0, EditorMargin + zoomPoint.Y * _zoomScale - viewportPoint.Y));
+
+        UpdateStatus();
+        e.Handled = true;
+    }
+
+    private void EditorScrollViewer_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!CanStartPan(e.ChangedButton))
+            return;
+
+        if (_isDrawing || _isDragging)
+            return;
+
+        StartPan(e.ChangedButton, e.GetPosition(EditorScrollViewer));
+        e.Handled = true;
+    }
+
+    private void EditorScrollViewer_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isPanning)
+            return;
+
+        var currentPoint = e.GetPosition(EditorScrollViewer);
+        var delta = currentPoint - _panStartPoint;
+
+        EditorScrollViewer.ScrollToHorizontalOffset(_panStartHorizontalOffset - delta.X);
+        EditorScrollViewer.ScrollToVerticalOffset(_panStartVerticalOffset - delta.Y);
+        e.Handled = true;
+    }
+
+    private void EditorScrollViewer_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_isPanning || e.ChangedButton != _panButton)
+            return;
+
+        EndPan();
+        e.Handled = true;
+    }
+
+    private bool CanStartPan(MouseButton button)
+    {
+        return button is MouseButton.Right or MouseButton.Middle
+            || (button == MouseButton.Left && _currentTool == Tool.Pan && !_isCropMode);
+    }
+
+    private void StartPan(MouseButton button, Point startPoint)
+    {
+        _isPanning = true;
+        _panButton = button;
+        _panStartPoint = startPoint;
+        _panStartHorizontalOffset = EditorScrollViewer.HorizontalOffset;
+        _panStartVerticalOffset = EditorScrollViewer.VerticalOffset;
+
+        Mouse.Capture(EditorScrollViewer);
+        Mouse.OverrideCursor = Cursors.SizeAll;
+    }
+
+    private void EditorScrollViewer_LostMouseCapture(object sender, MouseEventArgs e)
+    {
+        if (_isPanning && Mouse.Captured != EditorScrollViewer)
+            EndPan();
+    }
+
+    private void EndPan()
+    {
+        _isPanning = false;
+        if (Mouse.Captured == EditorScrollViewer)
+            Mouse.Capture(null);
+        Mouse.OverrideCursor = null;
     }
 
     private void HandleSelectMouseDown(Point point)
@@ -674,6 +792,96 @@ public partial class EditorWindow : Window
             
             RedrawAnnotations();
             UpdateStatus();
+        }
+    }
+
+    private void SharpenButton_Click(object sender, RoutedEventArgs e)
+    {
+        var sharpenedImage = ApplySharpenFilter(_capturedImage);
+        _undoRedo.Execute(new ReplaceImageAction(_capturedImage, sharpenedImage, SetCapturedImage, "Sharpen image"));
+    }
+
+    private void SetCapturedImage(BitmapSource image)
+    {
+        _capturedImage = image;
+        BackgroundImage.Source = _capturedImage;
+        RedrawAnnotations();
+        UpdateStatus();
+    }
+
+    private BitmapSource ApplySharpenFilter(BitmapSource source)
+    {
+        const double sharpenAmount = 0.35;
+        var converted = new FormatConvertedBitmap(source, PixelFormats.Pbgra32, null, 0);
+        int width = converted.PixelWidth;
+        int height = converted.PixelHeight;
+        int stride = width * 4;
+        var sourcePixels = new byte[stride * height];
+        var targetPixels = new byte[sourcePixels.Length];
+
+        converted.CopyPixels(sourcePixels, stride, 0);
+        Array.Copy(sourcePixels, targetPixels, sourcePixels.Length);
+
+        for (int y = 1; y < height - 1; y++)
+        {
+            for (int x = 1; x < width - 1; x++)
+            {
+                int index = y * stride + x * 4;
+                int left = index - 4;
+                int right = index + 4;
+                int top = index - stride;
+                int bottom = index + stride;
+
+                for (int channel = 0; channel < 3; channel++)
+                {
+                    int edge = sourcePixels[index + channel] * 4
+                        - sourcePixels[left + channel]
+                        - sourcePixels[right + channel]
+                        - sourcePixels[top + channel]
+                        - sourcePixels[bottom + channel];
+                    int sharpened = (int)Math.Round(sourcePixels[index + channel] + edge * sharpenAmount);
+
+                    targetPixels[index + channel] = ClampToByte(sharpened);
+                }
+
+                targetPixels[index + 3] = sourcePixels[index + 3];
+            }
+        }
+
+        var bitmap = new WriteableBitmap(width, height, source.DpiX, source.DpiY, PixelFormats.Pbgra32, null);
+        bitmap.WritePixels(new Int32Rect(0, 0, width, height), targetPixels, stride, 0);
+        return bitmap;
+    }
+
+    private static byte ClampToByte(int value)
+    {
+        return (byte)Math.Clamp(value, 0, 255);
+    }
+
+    private class ReplaceImageAction : IUndoableAction
+    {
+        private readonly BitmapSource _oldImage;
+        private readonly BitmapSource _newImage;
+        private readonly Action<BitmapSource> _applyImage;
+
+        public string Description { get; }
+
+        public ReplaceImageAction(BitmapSource oldImage, BitmapSource newImage, Action<BitmapSource> applyImage, string description)
+        {
+            _oldImage = oldImage;
+            _newImage = newImage;
+            _applyImage = applyImage;
+            Description = description;
+        }
+
+        public void Execute()
+        {
+            _applyImage(_newImage);
+        }
+
+        public void Undo()
+        {
+            _applyImage(_oldImage);
         }
     }
 
@@ -1170,6 +1378,7 @@ public partial class EditorWindow : Window
             // Tool shortcuts
             switch (e.Key)
             {
+                case Key.Space: PanToolButton.IsChecked = true; e.Handled = true; break;
                 case Key.V: SelectToolButton.IsChecked = true; e.Handled = true; break;
                 case Key.A: ArrowToolButton.IsChecked = true; e.Handled = true; break;
                 case Key.L: LineToolButton.IsChecked = true; e.Handled = true; break;

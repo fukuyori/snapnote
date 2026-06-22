@@ -234,12 +234,15 @@
                                Margin="4,8,4,4" FontWeight="Bold"/>
                     
                     <WrapPanel Width="112">
+                        <RadioButton x:Name="PanToolButton" Content="✋" ToolTip="Move (Space)"
+                                     GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
+                                     IsChecked="True" Checked="PanTool_Checked"/>
                         <RadioButton x:Name="SelectToolButton" Content="▶" ToolTip="Select (V)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="SelectTool_Checked"/>
                         <RadioButton x:Name="ArrowToolButton" Content="➜" ToolTip="Arrow (A)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
-                                     IsChecked="True" Checked="ArrowTool_Checked"/>
+                                     Checked="ArrowTool_Checked"/>
                         <RadioButton x:Name="LineToolButton" Content="╱" ToolTip="Line (L)" 
                                      GroupName="Tools" Style="{StaticResource ToolButtonStyle}"
                                      Checked="LineTool_Checked"/>
@@ -302,16 +305,25 @@
                         <Button x:Name="ResizeButton" Content="⇲Resize" ToolTip="Resize" 
                                 Style="{StaticResource ImageOpButtonStyle}"
                                 Click="ResizeButton_Click"/>
+                        <Button x:Name="SharpenButton" Content="✦Sharp" ToolTip="Sharpen"
+                                Style="{StaticResource ImageOpButtonStyle}"
+                                Click="SharpenButton_Click"/>
                     </WrapPanel>
                 </StackPanel>
             </ScrollViewer>
         </Border>
         
         <!-- Main Editor Area -->
-        <ScrollViewer Grid.Row="1" Grid.Column="1" 
+        <ScrollViewer x:Name="EditorScrollViewer"
+                      Grid.Row="1" Grid.Column="1"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto"
-                      Background="#1E1E1E">
+                      Background="#1E1E1E"
+                      PreviewMouseWheel="EditorScrollViewer_PreviewMouseWheel"
+                      PreviewMouseDown="EditorScrollViewer_PreviewMouseDown"
+                      PreviewMouseMove="EditorScrollViewer_PreviewMouseMove"
+                      PreviewMouseUp="EditorScrollViewer_PreviewMouseUp"
+                      LostMouseCapture="EditorScrollViewer_LostMouseCapture">
             <Border Background="White"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -321,6 +333,10 @@
                 </Border.Effect>
                 
                 <Grid x:Name="EditorContainer">
+                    <Grid.LayoutTransform>
+                        <ScaleTransform x:Name="EditorZoomTransform" ScaleX="1" ScaleY="1"/>
+                    </Grid.LayoutTransform>
+
                     <Image x:Name="BackgroundImage" 
                            Stretch="None"
                            IsHitTestVisible="False"/>

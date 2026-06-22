@@ -20,6 +20,7 @@
 ### Annotation Tools
 | Tool | Shortcut | Description |
 |------|----------|-------------|
+| Move | Space | Move the image viewport by dragging |
 | Select | V | Select and move annotations |
 | Arrow | A | Draw arrows to point at things |
 | Line | L | Draw straight lines |
@@ -42,8 +43,10 @@
 - **Crop**: Trim the image to a selected area
 - **Rotate**: Rotate the image 90° clockwise
 - **Resize**: Scale the image with aspect ratio preservation
+- **Sharpen**: Apply a gentle sharpen filter to the image
 
 ### Additional Features
+- **Editor zoom and pan**: Use the mouse wheel to zoom up to 1200%, then drag in Move mode or use the middle/right mouse button to pan
 - **Undo/Redo**: Full history support (Ctrl+Z / Ctrl+Y)
 - **Copy to clipboard**: Quick sharing (Ctrl+C)
 - **Save to file**: Automatically saves PNG files with timestamp-based names (Ctrl+S)
@@ -102,7 +105,7 @@ With Inno Setup installed, run the following:
 ```powershell
 .\scripts\build-installer.ps1
 
-# Output: installer_output/SnapNoteStudio_Setup_2.0.0.exe
+# Output: installer_output/SnapNoteStudio_Setup_2.1.0.exe
 ```
 
 ## Usage
@@ -121,13 +124,14 @@ With Inno Setup installed, run the following:
 
 ### Editor
 
-1. Use the left sidebar to select annotation tools
+1. Use the left sidebar to select Move mode or annotation tools
 2. Adjust color, thickness, and opacity in the top toolbar
 3. Draw annotations on the image
-4. Use `Ctrl+Z` to undo, `Ctrl+Y` to redo
-5. Click "Copy" or press `Ctrl+C` to copy to clipboard
-6. Click "Save" or press `Ctrl+S` to save to the configured folder
-7. Use `Ctrl+X`, `Ctrl+W`, or `Ctrl+Q` for quick close workflows
+4. Use the mouse wheel to zoom, then drag in Move mode or drag with the middle/right mouse button to pan
+5. Use `Ctrl+Z` to undo, `Ctrl+Y` to redo
+6. Click "Copy" or press `Ctrl+C` to copy to clipboard
+7. Click "Save" or press `Ctrl+S` to save to the configured folder
+8. Use `Ctrl+X`, `Ctrl+W`, or `Ctrl+Q` for quick close workflows
 
 ### Settings
 
@@ -161,6 +165,9 @@ Right-click the system tray icon and select "Settings" to open the settings dial
 | Ctrl+Q | Close without saving |
 | Delete | Delete selected annotation |
 | Escape | Deselect / Cancel crop mode |
+| Space | Switch to Move mode |
+| Mouse wheel | Zoom in/out |
+| Middle/right button drag | Move the image viewport |
 | V, A, L, R, E, T, N, H, F, M, B, S, G | Tool shortcuts |
 
 ### Capture Overlay
