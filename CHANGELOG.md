@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0 - 2026-07-06
+
+### Changed
+- Pressing `Esc` while the previous-region preview (`Space`) is shown now cancels only the preview and returns to normal range/window selection, instead of closing the capture overlay.
+- Pressing `Space` again while the previous-region preview is shown now captures the previewed region immediately, matching the existing `Enter` behavior.
+
+### Fixed
+- Fixed clicks on windows inside the previous-region preview area not being detected, caused by the fully transparent overlay pixels there allowing clicks to pass through to the window behind.
+
 ## 2.1.0 - 2026-06-22
 
 ### Added

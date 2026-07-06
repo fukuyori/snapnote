@@ -6,7 +6,7 @@
         AllowsTransparency="True"
         Topmost="True"
         ShowInTaskbar="False"
-        Background="Transparent"
+        Background="#01000000"
         Cursor="Cross"
         KeyDown="Window_KeyDown"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"

@@ -57,13 +57,27 @@ public partial class OverlayWindow : Window
     {
         if (e.Key == Key.Escape)
         {
-            CaptureCancelled?.Invoke(this, EventArgs.Empty);
+            if (_isShowingLastRegion)
+            {
+                CancelLastRegionPreview();
+            }
+            else
+            {
+                CaptureCancelled?.Invoke(this, EventArgs.Empty);
+            }
             e.Handled = true;
         }
         else if (e.Key == Key.Space && !_isMouseDown)
         {
-            ShowLastCaptureRegion();
-            ShowCursorMessage("ウインドウ選択中");
+            if (_isShowingLastRegion)
+            {
+                CompleteCapture(GetSelectionRect());
+            }
+            else
+            {
+                ShowLastCaptureRegion();
+                ShowCursorMessage("ウインドウ選択中");
+            }
             e.Handled = true;
         }
         else if ((e.Key == Key.Enter || e.Key == Key.Return) && _isShowingLastRegion)
@@ -71,6 +85,16 @@ public partial class OverlayWindow : Window
             CompleteCapture(GetSelectionRect());
             e.Handled = true;
         }
+    }
+
+    private void CancelLastRegionPreview()
+    {
+        _isShowingLastRegion = false;
+        HideCursorMessage();
+        SelectionBorder.Visibility = Visibility.Collapsed;
+        SizeIndicator.Visibility = Visibility.Collapsed;
+        SelectionGeometry.Rect = new Rect(0, 0, 0, 0);
+        Instructions.Visibility = Visibility.Visible;
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
