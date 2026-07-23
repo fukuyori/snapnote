@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.1 - 2026-07-23
+
+### Added
+- The editor window now remembers its size, position, and maximized state between sessions, instead of resizing to fit the captured image each time.
+
 ## 2.2.0 - 2026-07-06
 
 ### Changed

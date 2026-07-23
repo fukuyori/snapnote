@@ -70,6 +70,7 @@ public partial class EditorWindow : Window
         }
         
         Loaded += OnLoaded;
+        Closing += OnClosing;
         _undoRedo.StateChanged += (s, e) => UpdateUndoRedoButtons();
     }
 
@@ -85,18 +86,71 @@ public partial class EditorWindow : Window
         ApplyLocalization();
         
         UpdateStatus();
-        
+
+        RestoreWindowBounds();
+
+        UpdateUndoRedoButtons();
+    }
+
+    private void RestoreWindowBounds()
+    {
+        var bounds = _settingsService?.Settings.EditorWindowBounds;
+
+        if (bounds is { Width: > 0, Height: > 0 } && IsOnScreen(bounds))
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Left = bounds.Left;
+            Top = bounds.Top;
+            Width = bounds.Width;
+            Height = bounds.Height;
+            WindowState = bounds.IsMaximized ? WindowState.Maximized : WindowState.Normal;
+            return;
+        }
+
         double maxWidth = SystemParameters.WorkArea.Width * 0.9;
         double maxHeight = SystemParameters.WorkArea.Height * 0.9;
-        
+
         // Ensure minimum size of 1200x800, or larger if image requires
         double desiredWidth = Math.Max(1200, _capturedImage.PixelWidth + 200);
         double desiredHeight = Math.Max(800, _capturedImage.PixelHeight + 180);
-        
+
         Width = Math.Min(desiredWidth, maxWidth);
         Height = Math.Min(desiredHeight, maxHeight);
-        
-        UpdateUndoRedoButtons();
+    }
+
+    private static bool IsOnScreen(SavedWindowBounds bounds)
+    {
+        var virtualScreen = new Rect(
+            SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth,
+            SystemParameters.VirtualScreenHeight);
+
+        var windowRect = new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height);
+        windowRect.Intersect(virtualScreen);
+
+        // Require a reasonable portion of the saved window to still be visible
+        return windowRect.Width >= 100 && windowRect.Height >= 100;
+    }
+
+    private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (_settingsService == null)
+            return;
+
+        var isMaximized = WindowState == WindowState.Maximized;
+        var normalBounds = isMaximized ? RestoreBounds : new Rect(Left, Top, Width, Height);
+
+        _settingsService.Settings.EditorWindowBounds = new SavedWindowBounds
+        {
+            Left = normalBounds.Left,
+            Top = normalBounds.Top,
+            Width = normalBounds.Width,
+            Height = normalBounds.Height,
+            IsMaximized = isMaximized
+        };
+
+        _settingsService.Save();
     }
 
     private void ApplyLocalization()
