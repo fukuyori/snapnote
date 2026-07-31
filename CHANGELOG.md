@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.0 - 2026-07-31
+
+### Added
+- OCR results now detect paragraphs and bullet/numbered list items instead of returning one line per detected text line. Wrapped lines within a paragraph are joined together, distinct paragraphs are separated by a blank line, and consecutive list items are kept tight without extra blank lines between them.
+
 ## 3.0.0 - 2026-07-31
 
 ### Added

@@ -26,6 +26,9 @@ public static class OllamaTranslationService
 
         var prompt =
             $"Translate the following text to {targetLanguage}. " +
+            "Preserve the exact paragraph structure: keep blank lines between paragraphs, and keep each " +
+            "bulleted or numbered list item on its own line exactly as in the original. Do not merge " +
+            "paragraphs or remove blank lines. " +
             "Output only the translated text, with no explanation, notes, or quotation marks.\n\n" +
             text;
 
@@ -36,7 +39,10 @@ public static class OllamaTranslationService
             stream = false,
             // Hybrid reasoning models (qwen3, gpt-oss, etc.) can spend minutes generating a
             // hidden "thinking" trace before the actual answer; skip it for a plain translation.
-            think = false
+            think = false,
+            // Keep formatting (blank lines, list breaks) consistent across runs instead of
+            // varying with the model's default sampling temperature.
+            options = new { temperature = 0 }
         });
 
         using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
