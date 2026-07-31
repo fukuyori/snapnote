@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $ProjectPath = Join-Path $RepoRoot "SnapNoteStudio.csproj"
-$PublishDir = Join-Path $RepoRoot "bin\$Configuration\net8.0-windows\$Runtime\publish"
+$PublishDir = Join-Path $RepoRoot "bin\$Configuration\net8.0-windows10.0.19041.0\$Runtime\publish"
 $ExePath = Join-Path $PublishDir "SnapNoteStudio.exe"
 
 if ($Clean -and (Test-Path $PublishDir)) {

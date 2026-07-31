@@ -1,7 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using SnapNoteStudio.Services;
 using WinForms = System.Windows.Forms;
+using CheckBox = System.Windows.Controls.CheckBox;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace SnapNoteStudio.Views;
 
@@ -20,12 +23,22 @@ public partial class SettingsDialog : Window
         
         LoadSettings();
         ApplyLocalization();
-        
-        DefaultStrokeSlider.ValueChanged += (s, e) => 
+
+        DefaultStrokeSlider.ValueChanged += (s, e) =>
             DefaultStrokeText.Text = ((int)e.NewValue).ToString();
-        DefaultOpacitySlider.ValueChanged += (s, e) => 
+        DefaultOpacitySlider.ValueChanged += (s, e) =>
             DefaultOpacityText.Text = $"{(int)(e.NewValue * 100)}%";
+
+        _ = RefreshOllamaModelsAsync(showWarningIfEmpty: false);
+
+        foreach (var box in ShortcutBoxes)
+            box.PreviewKeyDown += ShortcutBox_PreviewKeyDown;
     }
+
+    private TextBox[] ShortcutBoxes => new[]
+    {
+        CopyShortcutBox, SaveShortcutBox, OcrShortcutBox, TranslateShortcutBox, CloseShortcutBox
+    };
     
     private void ApplyLocalization()
     {
@@ -41,6 +54,20 @@ public partial class SettingsDialog : Window
         OpacityLabel.Text = L10n.Get("DefaultOpacity");
         CancelButton.Content = L10n.Get("Cancel");
         SaveButton.Content = L10n.Get("Save");
+        OcrLanguagesGroup.Header = L10n.Get("OcrLanguages");
+        OcrLanguagesHint.Text = L10n.Get("OcrLanguagesHint");
+        OllamaGroup.Header = L10n.Get("OllamaGroupTitle");
+        OllamaHint.Text = L10n.Get("OllamaHint");
+        OllamaEndpointLabel.Text = L10n.Get("OllamaEndpoint");
+        OllamaModelLabel.Text = L10n.Get("OllamaModel");
+        OllamaRefreshButton.Content = L10n.Get("Refresh");
+        EditorShortcutsGroup.Header = L10n.Get("EditorShortcutsGroupTitle");
+        EditorShortcutsHint.Text = L10n.Get("EditorShortcutsHint");
+        ShortcutCopyLabel.Text = L10n.Get("ShortcutCopy");
+        ShortcutSaveLabel.Text = L10n.Get("ShortcutSave");
+        ShortcutOcrLabel.Text = L10n.Get("ShortcutOcr");
+        ShortcutTranslateLabel.Text = L10n.Get("ShortcutTranslate");
+        ShortcutCloseLabel.Text = L10n.Get("ShortcutClose");
     }
     
     private void LoadSettings()
@@ -85,6 +112,88 @@ public partial class SettingsDialog : Window
         // Defaults
         DefaultStrokeSlider.Value = _settingsService.Settings.DefaultStrokeWidth;
         DefaultOpacitySlider.Value = _settingsService.Settings.DefaultOpacity;
+
+        // OCR languages
+        OcrLanguagesPanel.Children.Clear();
+        var selectedTags = _settingsService.Settings.OcrLanguages;
+
+        foreach (var language in OcrService.AvailableRecognizerLanguages)
+        {
+            var checkBox = new CheckBox
+            {
+                Content = $"{language.DisplayName} ({language.LanguageTag})",
+                Tag = language.LanguageTag,
+                IsChecked = selectedTags.Contains(language.LanguageTag),
+                Margin = new Thickness(0, 2, 0, 2)
+            };
+            OcrLanguagesPanel.Children.Add(checkBox);
+        }
+
+        if (OcrLanguagesPanel.Children.Count == 0)
+        {
+            OcrLanguagesPanel.Children.Add(new TextBlock
+            {
+                Text = L10n.Get("OcrLanguagesNone"),
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+
+        // Ollama translation settings
+        OllamaEndpointTextBox.Text = _settingsService.Settings.OllamaEndpoint;
+        OllamaModelComboBox.Text = _settingsService.Settings.OllamaModel;
+
+        // Editor shortcuts
+        var shortcuts = _settingsService.Settings.EditorShortcuts;
+        CopyShortcutBox.Text = shortcuts.Copy;
+        SaveShortcutBox.Text = shortcuts.Save;
+        OcrShortcutBox.Text = shortcuts.Ocr;
+        TranslateShortcutBox.Text = shortcuts.Translate;
+        CloseShortcutBox.Text = shortcuts.Close;
+    }
+
+    private void ShortcutBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox box)
+            return;
+
+        e.Handled = true;
+
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+
+        if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt
+            or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin or Key.System or Key.None)
+        {
+            return;
+        }
+
+        var modifiers = Keyboard.Modifiers;
+        if (modifiers == ModifierKeys.None)
+        {
+            MessageBox.Show(L10n.Get("ShortcutRequiresModifier"), L10n.Get("SettingsTitle"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (modifiers == ModifierKeys.Control && key is Key.Z or Key.Y)
+        {
+            MessageBox.Show(L10n.Get("ShortcutReserved"), L10n.Get("SettingsTitle"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var formatted = ShortcutUtilities.Format(modifiers, key);
+
+        foreach (var otherBox in ShortcutBoxes)
+        {
+            if (otherBox != box && otherBox.Text == formatted)
+            {
+                MessageBox.Show(string.Format(L10n.Get("ShortcutConflict"), formatted), L10n.Get("SettingsTitle"),
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
+        box.Text = formatted;
     }
     
     private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -141,7 +250,30 @@ public partial class SettingsDialog : Window
         // Save defaults
         _settingsService.Settings.DefaultStrokeWidth = DefaultStrokeSlider.Value;
         _settingsService.Settings.DefaultOpacity = DefaultOpacitySlider.Value;
-        
+
+        // Save OCR languages
+        _settingsService.Settings.OcrLanguages = OcrLanguagesPanel.Children
+            .OfType<CheckBox>()
+            .Where(cb => cb.IsChecked == true)
+            .Select(cb => (string)cb.Tag)
+            .ToList();
+
+        // Save Ollama translation settings
+        _settingsService.Settings.OllamaEndpoint = string.IsNullOrWhiteSpace(OllamaEndpointTextBox.Text)
+            ? "http://localhost:11434"
+            : OllamaEndpointTextBox.Text.Trim();
+        _settingsService.Settings.OllamaModel = OllamaModelComboBox.Text.Trim();
+
+        // Save editor shortcuts
+        _settingsService.Settings.EditorShortcuts = new EditorShortcutSettings
+        {
+            Copy = CopyShortcutBox.Text,
+            Save = SaveShortcutBox.Text,
+            Ocr = OcrShortcutBox.Text,
+            Translate = TranslateShortcutBox.Text,
+            Close = CloseShortcutBox.Text
+        };
+
         _settingsService.Save();
         
         DialogResult = true;
@@ -162,6 +294,42 @@ public partial class SettingsDialog : Window
         
         DialogResult = false;
         Close();
+    }
+
+    private async void OllamaRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        await RefreshOllamaModelsAsync(showWarningIfEmpty: true);
+    }
+
+    private async Task RefreshOllamaModelsAsync(bool showWarningIfEmpty)
+    {
+        var endpoint = OllamaEndpointTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(endpoint))
+            return;
+
+        OllamaRefreshButton.IsEnabled = false;
+        var currentText = OllamaModelComboBox.Text;
+
+        try
+        {
+            var models = await OllamaTranslationService.GetAvailableModelsAsync(endpoint);
+
+            OllamaModelComboBox.Items.Clear();
+            foreach (var model in models)
+                OllamaModelComboBox.Items.Add(new ComboBoxItem { Content = model });
+
+            if (models.Count == 0 && showWarningIfEmpty)
+            {
+                MessageBox.Show(L10n.Get("OllamaNoModelsFound"), L10n.Get("SettingsTitle"),
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            OllamaModelComboBox.Text = currentText;
+        }
+        finally
+        {
+            OllamaRefreshButton.IsEnabled = true;
+        }
     }
 
     private void Browse_Click(object sender, RoutedEventArgs e)

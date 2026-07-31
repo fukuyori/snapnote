@@ -11,6 +11,7 @@ public partial class App : Application
     private TaskbarIcon? _notifyIcon;
     private HotkeyService? _hotkeyService;
     private OverlayWindow? _overlayWindow;
+    private EditorWindow? _reuseTargetWindow;
     private SettingsService _settingsService = new();
 
     protected override void OnStartup(StartupEventArgs e)
@@ -164,10 +165,50 @@ public partial class App : Application
         {
             SaveLastCaptureRegion(e.CaptureRegion);
 
+            if (_reuseTargetWindow != null && _reuseTargetWindow.TryLoadCapture(e.CapturedImage, e.CaptureRegion))
+            {
+                _reuseTargetWindow.Activate();
+                return;
+            }
+
             var editorWindow = new EditorWindow(e.CapturedImage, e.CaptureRegion, _settingsService);
+            editorWindow.ReuseForNewCaptureChanged += OnEditorReuseForNewCaptureChanged;
+            editorWindow.Closed += (s, args) =>
+            {
+                if (_reuseTargetWindow == editorWindow)
+                    _reuseTargetWindow = null;
+            };
+
+            if (_settingsService.Settings.ReuseEditorWindowForNewCapture)
+            {
+                editorWindow.SetReuseForNewCapture(true);
+                _reuseTargetWindow = editorWindow;
+            }
+
             editorWindow.Show();
             editorWindow.Activate();
         }
+    }
+
+    private void OnEditorReuseForNewCaptureChanged(object? sender, bool enabled)
+    {
+        if (sender is not EditorWindow window)
+            return;
+
+        if (enabled)
+        {
+            if (_reuseTargetWindow != null && _reuseTargetWindow != window)
+                _reuseTargetWindow.SetReuseForNewCapture(false);
+
+            _reuseTargetWindow = window;
+        }
+        else if (_reuseTargetWindow == window)
+        {
+            _reuseTargetWindow = null;
+        }
+
+        _settingsService.Settings.ReuseEditorWindowForNewCapture = enabled;
+        _settingsService.Save();
     }
 
     private Rect? GetLastCaptureRegion()

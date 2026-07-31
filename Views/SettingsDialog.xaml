@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings"
         Width="420"
-        Height="480"
+        Height="600"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#2D2D30">
-    
+
     <Window.Resources>
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#CCCCCC"/>
@@ -26,113 +26,208 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
     </Window.Resources>
-    
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
+
         <!-- Title -->
-        <TextBlock x:Name="TitleText" Grid.Row="0" Text="Settings" FontSize="18" FontWeight="Bold" 
+        <TextBlock x:Name="TitleText" Grid.Row="0" Text="Settings" FontSize="18" FontWeight="Bold"
                    Foreground="White" Margin="0,0,0,20"/>
-        
-        <!-- Language Setting -->
-        <Grid Grid.Row="1" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            
-            <TextBlock x:Name="LanguageLabel" Grid.Column="0" Text="Language:"/>
-            <ComboBox x:Name="LanguageComboBox" Grid.Column="1" SelectionChanged="LanguageComboBox_SelectionChanged">
-                <ComboBoxItem Content="English" Tag="English"/>
-                <ComboBoxItem Content="日本語" Tag="Japanese"/>
-                <ComboBoxItem Content="简体中文" Tag="Chinese"/>
-                <ComboBoxItem Content="Español" Tag="Spanish"/>
-                <ComboBoxItem Content="한국어" Tag="Korean"/>
-            </ComboBox>
-        </Grid>
-        
-        <!-- Hotkey Setting -->
-        <Grid Grid.Row="2" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            
-            <TextBlock x:Name="HotkeyLabel" Grid.Column="0" Text="Capture hotkey:"/>
-            <ComboBox x:Name="HotkeyComboBox" Grid.Column="1"/>
-        </Grid>
-        
-        <!-- Startup Setting -->
-        <CheckBox x:Name="StartupCheckBox" Grid.Row="3" 
-                  Content="Start with Windows" 
-                  Margin="0,0,0,16"/>
 
-        <!-- Save Location Setting -->
-        <Grid Grid.Row="4" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-14,0" Padding="0,0,14,0">
+            <StackPanel>
 
-            <TextBlock x:Name="SaveDirectoryLabel" Grid.Column="0" Text="Save location:"/>
-            <Grid Grid.Column="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="72"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="SaveDirectoryTextBox" Grid.Column="0" Margin="0,0,8,0"/>
-                <Button x:Name="BrowseButton" Grid.Column="1" Content="Browse" Click="Browse_Click"/>
-            </Grid>
-        </Grid>
-        
-        <!-- Default Settings -->
-        <GroupBox x:Name="DefaultSettingsGroup" Grid.Row="5" Header="Default Settings" 
-                  Foreground="#888888" BorderBrush="#555555" Margin="0,0,0,16">
-            <StackPanel Margin="8">
-                <Grid Margin="0,8,0,8">
+                <!-- Language Setting -->
+                <Grid Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="140"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="40"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="ThicknessLabel" Grid.Column="0" Text="Thickness:"/>
-                    <Slider x:Name="DefaultStrokeSlider" Grid.Column="1" 
-                            Minimum="1" Maximum="10" Value="3" 
-                            VerticalAlignment="Center"/>
-                    <TextBlock x:Name="DefaultStrokeText" Grid.Column="2" Text="3" 
-                               HorizontalAlignment="Center"/>
+
+                    <TextBlock x:Name="LanguageLabel" Grid.Column="0" Text="Language:"/>
+                    <ComboBox x:Name="LanguageComboBox" Grid.Column="1" SelectionChanged="LanguageComboBox_SelectionChanged">
+                        <ComboBoxItem Content="English" Tag="English"/>
+                        <ComboBoxItem Content="日本語" Tag="Japanese"/>
+                        <ComboBoxItem Content="简体中文" Tag="Chinese"/>
+                        <ComboBoxItem Content="Español" Tag="Spanish"/>
+                        <ComboBoxItem Content="한국어" Tag="Korean"/>
+                    </ComboBox>
                 </Grid>
-                
-                <Grid Margin="0,0,0,8">
+
+                <!-- Hotkey Setting -->
+                <Grid Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="140"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="40"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="OpacityLabel" Grid.Column="0" Text="Opacity:"/>
-                    <Slider x:Name="DefaultOpacitySlider" Grid.Column="1" 
-                            Minimum="0.1" Maximum="1.0" Value="1.0" 
-                            VerticalAlignment="Center"/>
-                    <TextBlock x:Name="DefaultOpacityText" Grid.Column="2" Text="100%" 
-                               HorizontalAlignment="Center"/>
+
+                    <TextBlock x:Name="HotkeyLabel" Grid.Column="0" Text="Capture hotkey:"/>
+                    <ComboBox x:Name="HotkeyComboBox" Grid.Column="1"/>
                 </Grid>
+
+                <!-- Startup Setting -->
+                <CheckBox x:Name="StartupCheckBox"
+                          Content="Start with Windows"
+                          Margin="0,0,0,16"/>
+
+                <!-- Save Location Setting -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="SaveDirectoryLabel" Grid.Column="0" Text="Save location:"/>
+                    <Grid Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="72"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="SaveDirectoryTextBox" Grid.Column="0" Margin="0,0,8,0"/>
+                        <Button x:Name="BrowseButton" Grid.Column="1" Content="Browse" Click="Browse_Click"/>
+                    </Grid>
+                </Grid>
+
+                <!-- Default Settings -->
+                <GroupBox x:Name="DefaultSettingsGroup" Header="Default Settings"
+                          Foreground="#888888" BorderBrush="#555555" Margin="0,0,0,16">
+                    <StackPanel Margin="8">
+                        <Grid Margin="0,8,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="40"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="ThicknessLabel" Grid.Column="0" Text="Thickness:"/>
+                            <Slider x:Name="DefaultStrokeSlider" Grid.Column="1"
+                                    Minimum="1" Maximum="10" Value="3"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock x:Name="DefaultStrokeText" Grid.Column="2" Text="3"
+                                       HorizontalAlignment="Center"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="40"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="OpacityLabel" Grid.Column="0" Text="Opacity:"/>
+                            <Slider x:Name="DefaultOpacitySlider" Grid.Column="1"
+                                    Minimum="0.1" Maximum="1.0" Value="1.0"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock x:Name="DefaultOpacityText" Grid.Column="2" Text="100%"
+                                       HorizontalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- OCR Languages Setting -->
+                <GroupBox x:Name="OcrLanguagesGroup" Header="OCR Languages"
+                          Foreground="#888888" BorderBrush="#555555" Margin="0,0,0,16">
+                    <StackPanel Margin="8">
+                        <TextBlock x:Name="OcrLanguagesHint" Text="Select the languages OCR should try:"
+                                   TextWrapping="Wrap" Foreground="#888888" FontSize="11" Margin="0,0,0,6"/>
+                        <ScrollViewer MaxHeight="110" VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="OcrLanguagesPanel"/>
+                        </ScrollViewer>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Translation (Ollama) Setting -->
+                <GroupBox x:Name="OllamaGroup" Header="Translation (Ollama)"
+                          Foreground="#888888" BorderBrush="#555555" Margin="0,0,0,16">
+                    <StackPanel Margin="8">
+                        <TextBlock x:Name="OllamaHint" Text="Uses a local Ollama server to translate OCR results."
+                                   TextWrapping="Wrap" Foreground="#888888" FontSize="11" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="OllamaEndpointLabel" Grid.Column="0" Text="Endpoint:"/>
+                            <TextBox x:Name="OllamaEndpointTextBox" Grid.Column="1"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="70"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="OllamaModelLabel" Grid.Column="0" Text="Model:"/>
+                            <ComboBox x:Name="OllamaModelComboBox" Grid.Column="1" IsEditable="True" Margin="0,0,8,0"/>
+                            <Button x:Name="OllamaRefreshButton" Grid.Column="2" Content="Refresh" Click="OllamaRefresh_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Editor Shortcuts Setting -->
+                <GroupBox x:Name="EditorShortcutsGroup" Header="Editor Shortcuts"
+                          Foreground="#888888" BorderBrush="#555555" Margin="0,0,0,16">
+                    <StackPanel Margin="8">
+                        <TextBlock x:Name="EditorShortcutsHint"
+                                   Text="Click a box and press a key combination (must include Ctrl/Alt/Win):"
+                                   TextWrapping="Wrap" Foreground="#888888" FontSize="11" Margin="0,0,0,8"/>
+
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="ShortcutCopyLabel" Grid.Column="0" Text="Copy:"/>
+                            <TextBox x:Name="CopyShortcutBox" Grid.Column="1" IsReadOnly="True" Cursor="Hand"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="ShortcutSaveLabel" Grid.Column="0" Text="Save:"/>
+                            <TextBox x:Name="SaveShortcutBox" Grid.Column="1" IsReadOnly="True" Cursor="Hand"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="ShortcutOcrLabel" Grid.Column="0" Text="OCR:"/>
+                            <TextBox x:Name="OcrShortcutBox" Grid.Column="1" IsReadOnly="True" Cursor="Hand"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="ShortcutTranslateLabel" Grid.Column="0" Text="Translate:"/>
+                            <TextBox x:Name="TranslateShortcutBox" Grid.Column="1" IsReadOnly="True" Cursor="Hand"/>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="ShortcutCloseLabel" Grid.Column="0" Text="Close:"/>
+                            <TextBox x:Name="CloseShortcutBox" Grid.Column="1" IsReadOnly="True" Cursor="Hand"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
             </StackPanel>
-        </GroupBox>
-        
+        </ScrollViewer>
+
         <!-- Buttons -->
-        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button x:Name="CancelButton" Content="Cancel" Width="90" Height="32" Margin="0,0,8,0"
                     Click="Cancel_Click"/>
-            <Button x:Name="SaveButton" Content="Save" Width="90" Height="32" 
+            <Button x:Name="SaveButton" Content="Save" Width="90" Height="32"
                     Background="#007ACC" Foreground="White"
                     Click="Save_Click"/>
         </StackPanel>

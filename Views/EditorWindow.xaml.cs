@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -18,7 +19,7 @@ public partial class EditorWindow : Window
     private const double EditorMargin = 20.0;
 
     private BitmapSource _capturedImage;
-    private readonly Rect _captureRegion;
+    private Rect _captureRegion;
     private readonly List<Annotation> _annotations = new();
     private readonly UndoRedoService _undoRedo = new();
     private readonly SettingsService? _settingsService;
@@ -77,19 +78,50 @@ public partial class EditorWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         BackgroundImage.Source = _capturedImage;
-        
+
         // Apply settings to UI
         StrokeWidthSlider.Value = _currentStrokeWidth;
         OpacitySlider.Value = _currentOpacity;
-        
+
         // Apply localization
         ApplyLocalization();
-        
+
         UpdateStatus();
 
         RestoreWindowBounds();
 
         UpdateUndoRedoButtons();
+
+        AutoOcrToggle.IsChecked = _settingsService?.Settings.AutoOcrOnCapture ?? false;
+        AutoTranslateToggle.IsChecked = _settingsService?.Settings.AutoTranslateOnCapture ?? false;
+
+        RunAutoOcrPipelineIfEnabled();
+    }
+
+    private void AutoOcrToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_settingsService == null)
+            return;
+
+        _settingsService.Settings.AutoOcrOnCapture = AutoOcrToggle.IsChecked == true;
+        _settingsService.Save();
+    }
+
+    private void AutoTranslateToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_settingsService == null)
+            return;
+
+        _settingsService.Settings.AutoTranslateOnCapture = AutoTranslateToggle.IsChecked == true;
+        _settingsService.Save();
+    }
+
+    private async void RunAutoOcrPipelineIfEnabled()
+    {
+        if (AutoTranslateToggle.IsChecked == true)
+            await RunOcrPipelineAsync(autoTranslate: true);
+        else if (AutoOcrToggle.IsChecked == true)
+            await RunOcrPipelineAsync(autoTranslate: false);
     }
 
     private void RestoreWindowBounds()
@@ -158,6 +190,12 @@ public partial class EditorWindow : Window
         Title = L10n.Get("EditorTitle");
         
         // Header buttons
+        ReuseWindowToggle.Content = L10n.Get("NewCapture");
+        ReuseWindowToggle.ToolTip = L10n.Get("NewCaptureTooltip");
+        AutoOcrToggle.Content = L10n.Get("AutoOcrToggle");
+        AutoOcrToggle.ToolTip = L10n.Get("AutoOcrToggleTooltip");
+        AutoTranslateToggle.Content = L10n.Get("AutoTranslateToggle");
+        AutoTranslateToggle.ToolTip = L10n.Get("AutoTranslateToggleTooltip");
         UndoButton.Content = L10n.Get("Undo");
         RedoButton.Content = L10n.Get("Redo");
         CopyButton.Content = L10n.Get("Copy");
@@ -194,6 +232,17 @@ public partial class EditorWindow : Window
         RotateButton.Content = L10n.Get("ToolRotate");
         ResizeButton.Content = L10n.Get("ToolResize");
         SharpenButton.Content = L10n.Get("ToolSharpen");
+        OcrButton.Content = L10n.Get("ToolOcr");
+        OcrButton.ToolTip = L10n.Get("OcrTooltip");
+        OcrTranslateQuickButton.Content = L10n.Get("ToolOcrTranslate");
+        OcrTranslateQuickButton.ToolTip = L10n.Get("OcrTranslateQuickTooltip");
+
+        // OCR pane
+        OcrPaneTitle.Text = L10n.Get("OcrResultTitle");
+        OcrPaneCloseButton.ToolTip = L10n.Get("Close");
+        OcrTranslateLabel.Text = L10n.Get("TranslateTo");
+        OcrTranslateButton.Content = L10n.Get("Translate");
+        OcrCopyButton.Content = L10n.Get("Copy");
     }
 
     private void UpdateStatus()
@@ -863,6 +912,70 @@ public partial class EditorWindow : Window
         UpdateStatus();
     }
 
+    /// <summary>
+    /// Raised when the user toggles "show new captures in this window". App listens for this
+    /// to decide whether the next hotkey-triggered capture should reuse this window instead of
+    /// opening a new EditorWindow.
+    /// </summary>
+    public event EventHandler<bool>? ReuseForNewCaptureChanged;
+
+    private bool _suppressReuseEvent;
+
+    public void SetReuseForNewCapture(bool enabled)
+    {
+        _suppressReuseEvent = true;
+        ReuseWindowToggle.IsChecked = enabled;
+        _suppressReuseEvent = false;
+    }
+
+    private void ReuseWindowToggle_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!_suppressReuseEvent)
+            ReuseForNewCaptureChanged?.Invoke(this, true);
+    }
+
+    private void ReuseWindowToggle_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (!_suppressReuseEvent)
+            ReuseForNewCaptureChanged?.Invoke(this, false);
+    }
+
+    /// <summary>
+    /// Loads a newly captured image into this window in place of the current one. Returns false
+    /// (without loading) if the user declines to discard existing annotations, so the caller can
+    /// fall back to opening a separate EditorWindow instead of losing the capture.
+    /// </summary>
+    public bool TryLoadCapture(BitmapSource image, Rect captureRegion)
+    {
+        if (_annotations.Count > 0)
+        {
+            var result = MessageBox.Show(L10n.Get("NewCaptureConfirm"), L10n.Get("NewCaptureTitle"),
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes)
+                return false;
+        }
+
+        HideOcrPane();
+
+        _capturedImage = image;
+        _captureRegion = captureRegion;
+        _annotations.Clear();
+        _selectedAnnotation = null;
+        _nextStepNumber = 1;
+        _undoRedo.Clear();
+
+        _zoomScale = 1.0;
+        EditorZoomTransform.ScaleX = 1.0;
+        EditorZoomTransform.ScaleY = 1.0;
+
+        BackgroundImage.Source = _capturedImage;
+        RedrawAnnotations();
+        UpdateStatus();
+
+        RunAutoOcrPipelineIfEnabled();
+        return true;
+    }
+
     private BitmapSource ApplySharpenFilter(BitmapSource source)
     {
         const double sharpenAmount = 0.35;
@@ -1383,32 +1496,53 @@ public partial class EditorWindow : Window
 
     private async void Window_KeyDown(object sender, KeyEventArgs e)
     {
+        var shortcuts = _settingsService?.Settings.EditorShortcuts ?? new EditorShortcutSettings();
+
+        if (MatchesShortcut(e, shortcuts.Copy))
+        {
+            await CopyToClipboard();
+            e.Handled = true;
+            return;
+        }
+        if (MatchesShortcut(e, shortcuts.Save))
+        {
+            SaveToFile();
+            e.Handled = true;
+            return;
+        }
+        if (MatchesShortcut(e, shortcuts.Ocr))
+        {
+            OcrButton_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+            return;
+        }
+        if (MatchesShortcut(e, shortcuts.Translate))
+        {
+            OcrTranslateQuickButton_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+            return;
+        }
+        if (MatchesShortcut(e, shortcuts.Close))
+        {
+            Close();
+            e.Handled = true;
+            return;
+        }
+
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
             switch (e.Key)
             {
                 case Key.Z: _undoRedo.Undo(); RedrawAnnotations(); e.Handled = true; break;
                 case Key.Y: _undoRedo.Redo(); RedrawAnnotations(); e.Handled = true; break;
-                case Key.C:
-                    await CopyToClipboard();
-                    e.Handled = true;
-                    break;
                 case Key.X:
                     if (await CopyToClipboard())
                         Close();
                     e.Handled = true;
                     break;
-                case Key.S:
-                    SaveToFile();
-                    e.Handled = true;
-                    break;
                 case Key.W:
                     if (SaveToFile())
                         Close();
-                    e.Handled = true;
-                    break;
-                case Key.Q:
-                    Close();
                     e.Handled = true;
                     break;
             }
@@ -1459,6 +1593,14 @@ public partial class EditorWindow : Window
         UpdateStatus();
     }
 
+    private static bool MatchesShortcut(KeyEventArgs e, string? shortcut)
+    {
+        if (!ShortcutUtilities.TryParse(shortcut, out var modifiers, out var key))
+            return false;
+
+        return Keyboard.Modifiers == modifiers && e.Key == key;
+    }
+
     #endregion
 
     #region Undo/Redo
@@ -1483,6 +1625,178 @@ public partial class EditorWindow : Window
 
     private async void CopyButton_Click(object sender, RoutedEventArgs e) => await CopyToClipboard();
     private void SaveButton_Click(object sender, RoutedEventArgs e) => SaveToFile();
+
+    private async void OcrButton_Click(object sender, RoutedEventArgs e) => await RunOcrPipelineAsync(autoTranslate: false);
+
+    private async Task RunOcrPipelineAsync(bool autoTranslate)
+    {
+        OcrButton.IsEnabled = false;
+        OcrTranslateQuickButton.IsEnabled = false;
+        StatusText.Text = L10n.Get("OcrRunning");
+
+        try
+        {
+            var bitmap = RenderToBitmap();
+            var text = await OcrService.RecognizeTextAsync(bitmap, _settingsService?.Settings.OcrLanguages);
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                StatusText.Text = L10n.Get("OcrNoTextFound");
+                return;
+            }
+
+            UpdateStatus();
+            ShowOcrPane(text);
+
+            // Only follow up with translation if Ollama is actually configured; otherwise leave
+            // the plain OCR result showing rather than popping an error for an unconfigured feature.
+            if (autoTranslate
+                && !string.IsNullOrWhiteSpace(_settingsService?.Settings.OllamaEndpoint)
+                && !string.IsNullOrWhiteSpace(_settingsService?.Settings.OllamaModel))
+            {
+                await TranslateOcrPaneAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"{L10n.Get("OcrFailed")}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            UpdateStatus();
+        }
+        finally
+        {
+            OcrButton.IsEnabled = true;
+            OcrTranslateQuickButton.IsEnabled = true;
+        }
+    }
+
+    private void ShowOcrPane(string recognizedText)
+    {
+        OcrResultTextBox.Text = recognizedText;
+
+        var savedLanguage = _settingsService?.Settings.TranslationTargetLanguage;
+        if (!string.IsNullOrWhiteSpace(savedLanguage))
+            OcrTargetLanguageComboBox.Text = savedLanguage;
+        else if (OcrTargetLanguageComboBox.SelectedIndex < 0 && OcrTargetLanguageComboBox.Items.Count > 0)
+            OcrTargetLanguageComboBox.SelectedIndex = 0;
+
+        OcrPaneSplitter.Visibility = Visibility.Visible;
+        OcrPane.Visibility = Visibility.Visible;
+        OcrSplitterColumnDef.Width = new GridLength(4);
+        OcrPaneColumnDef.Width = new GridLength(340);
+    }
+
+    private void HideOcrPane()
+    {
+        _ocrTranslateCts?.Cancel();
+
+        OcrPane.Visibility = Visibility.Collapsed;
+        OcrPaneSplitter.Visibility = Visibility.Collapsed;
+        OcrSplitterColumnDef.Width = new GridLength(0);
+        OcrPaneColumnDef.Width = new GridLength(0);
+    }
+
+    private void OcrPaneClose_Click(object sender, RoutedEventArgs e) => HideOcrPane();
+
+    private const double MinOcrFontSize = 8;
+    private const double MaxOcrFontSize = 36;
+
+    private void OcrResultTextBox_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers != ModifierKeys.Control)
+            return;
+
+        var delta = e.Delta > 0 ? 1 : -1;
+        OcrResultTextBox.FontSize = Math.Clamp(OcrResultTextBox.FontSize + delta, MinOcrFontSize, MaxOcrFontSize);
+        e.Handled = true;
+    }
+
+    private async void OcrCopy_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText(OcrResultTextBox.Text);
+        }
+        catch
+        {
+            // Clipboard access can fail transiently if another process holds it; ignore.
+            return;
+        }
+
+        var original = OcrCopyButton.Content;
+        OcrCopyButton.Content = "✓";
+        await Task.Delay(800);
+        OcrCopyButton.Content = original;
+    }
+
+    private async void OcrTranslateQuickButton_Click(object sender, RoutedEventArgs e) => await RunOcrPipelineAsync(autoTranslate: true);
+
+    private CancellationTokenSource? _ocrTranslateCts;
+
+    private async void OcrTranslate_Click(object sender, RoutedEventArgs e) => await TranslateOcrPaneAsync();
+
+    private async Task TranslateOcrPaneAsync()
+    {
+        if (_ocrTranslateCts != null)
+        {
+            // A translation is already running; treat this click as "Cancel".
+            _ocrTranslateCts.Cancel();
+            return;
+        }
+
+        var targetLanguage = (OcrTargetLanguageComboBox.SelectedItem as ComboBoxItem)?.Content as string
+            ?? OcrTargetLanguageComboBox.Text.Trim();
+
+        if (string.IsNullOrWhiteSpace(targetLanguage) || string.IsNullOrWhiteSpace(OcrResultTextBox.Text))
+            return;
+
+        var endpoint = _settingsService?.Settings.OllamaEndpoint;
+        var model = _settingsService?.Settings.OllamaModel;
+
+        if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(model))
+        {
+            MessageBox.Show(L10n.Get("OllamaNotConfigured"), L10n.Get("OcrResultTitle"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _ocrTranslateCts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+        var originalContent = OcrTranslateButton.Content;
+        OcrTranslateButton.Content = L10n.Get("Cancel");
+        OcrTargetLanguageComboBox.IsEnabled = false;
+
+        try
+        {
+            var translated = await OllamaTranslationService.TranslateAsync(
+                OcrResultTextBox.Text, targetLanguage, endpoint, model, _ocrTranslateCts.Token);
+
+            if (!string.IsNullOrWhiteSpace(translated))
+            {
+                OcrResultTextBox.Text = translated;
+
+                if (_settingsService != null)
+                {
+                    _settingsService.Settings.TranslationTargetLanguage = targetLanguage;
+                    _settingsService.Save();
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Either the user clicked Cancel or the safety timeout elapsed; no error dialog needed.
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"{L10n.Get("TranslationFailed")}: {ex.Message}", L10n.Get("OcrResultTitle"),
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            OcrTranslateButton.Content = originalContent;
+            OcrTargetLanguageComboBox.IsEnabled = true;
+            _ocrTranslateCts?.Dispose();
+            _ocrTranslateCts = null;
+        }
+    }
 
     private async Task<bool> CopyToClipboard()
     {

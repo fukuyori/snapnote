@@ -14,6 +14,23 @@ public class AppSettings
     public string SaveDirectory { get; set; } = SettingsService.DefaultSaveDirectory;
     public SavedCaptureRegion? LastCaptureRegion { get; set; }
     public SavedWindowBounds? EditorWindowBounds { get; set; }
+    public List<string> OcrLanguages { get; set; } = new();
+    public string OllamaEndpoint { get; set; } = "http://localhost:11434";
+    public string OllamaModel { get; set; } = "";
+    public string TranslationTargetLanguage { get; set; } = "English";
+    public bool ReuseEditorWindowForNewCapture { get; set; } = false;
+    public bool AutoOcrOnCapture { get; set; } = false;
+    public bool AutoTranslateOnCapture { get; set; } = false;
+    public EditorShortcutSettings EditorShortcuts { get; set; } = new();
+}
+
+public class EditorShortcutSettings
+{
+    public string Copy { get; set; } = "Ctrl+C";
+    public string Save { get; set; } = "Ctrl+S";
+    public string Ocr { get; set; } = "Ctrl+Shift+O";
+    public string Translate { get; set; } = "Ctrl+Shift+T";
+    public string Close { get; set; } = "Ctrl+Q";
 }
 
 public class SavedWindowBounds

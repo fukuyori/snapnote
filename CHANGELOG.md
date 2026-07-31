@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.0.0 - 2026-07-31
+
+### Added
+- Added OCR (text extraction) in the editor, using the Windows OCR engine. Multiple OCR languages can be selected in Settings; the best-scoring result is kept automatically.
+- Added translation of OCR results via a local Ollama server (endpoint and model configurable in Settings), shown alongside the OCR text.
+- OCR and translation results are now shown in a resizable pane docked to the right of the editor, instead of a separate dialog window.
+- Added `Ctrl` + mouse wheel to zoom the OCR result pane's text size.
+- Added a "New Here" toggle in the editor: when enabled, the next capture (taken with the usual shortcut) replaces the image in that same editor window instead of opening a new one.
+- Added "Auto OCR" and "Auto Translate" toggles in the editor to automatically run OCR (and optionally translation) whenever a new capture loads.
+- Added per-action configurable keyboard shortcuts in Settings for Copy, Save, OCR, Translate, and Close in the editor.
+- The "New Here" toggle state is remembered between sessions.
+
+### Changed
+- The editor window's minimum size was reduced from 1200x800 to 640x480.
+- Tightened spacing between sidebar tool icons and reduced the sidebar's width to remove excess empty space.
+
 ## 2.2.1 - 2026-07-23
 
 ### Added
