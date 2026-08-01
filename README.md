@@ -105,7 +105,7 @@ With Inno Setup installed, run the following:
 ```powershell
 .\scripts\build-installer.ps1
 
-# Output: installer_output/SnapNoteStudio_Setup_2.1.0.exe
+# Output: installer_output/SnapNoteStudio_Setup_3.1.1.exe
 ```
 
 ## Usage

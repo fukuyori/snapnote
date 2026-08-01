@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.1 - 2026-08-01
+
+### Fixed
+- Fixed the Resize dialog height so the Cancel and OK buttons remain fully visible at different display scaling and text-size settings.
+
 ## 3.1.0 - 2026-07-31
 
 ### Added
