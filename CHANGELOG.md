@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.2 - 2026-08-06
+
+### Fixed
+- Fixed the system tray tooltip remaining visible in screenshots when capture starts while the tooltip is open.
+
 ## 3.1.1 - 2026-08-01
 
 ### Fixed

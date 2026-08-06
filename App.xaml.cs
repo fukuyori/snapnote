@@ -137,6 +137,11 @@ public partial class App : Application
         if (_overlayWindow != null && _overlayWindow.IsVisible)
             return;
 
+        // The tray tooltip is a separate top-level WPF popup. If capture starts
+        // while it is open, CopyFromScreen bakes it into the captured image.
+        if (_notifyIcon?.TrayToolTipResolved is { IsOpen: true } trayToolTip)
+            trayToolTip.IsOpen = false;
+
         // Capture screen BEFORE showing overlay
         var screenCapture = ScreenCaptureService.CaptureScreen();
         
