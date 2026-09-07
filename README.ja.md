@@ -12,6 +12,10 @@
   <img src="images/screenshot1.png" width="100%" alt="注釈ツールと画像効果ツールを表示した SnapNote Studio エディター">
 </p>
 
+<p align="center">
+  <img src="images/screenshot2.png" width="100%" alt="OCR・翻訳結果を表示した SnapNote Studio エディター">
+</p>
+
 ## 機能
 
 ### キャプチャ

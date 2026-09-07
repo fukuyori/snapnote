@@ -12,6 +12,10 @@
   <img src="images/screenshot1.png" width="100%" alt="SnapNote Studio editor showing annotation and image effect tools">
 </p>
 
+<p align="center">
+  <img src="images/screenshot2.png" width="100%" alt="SnapNote Studio editor showing OCR and translation results">
+</p>
+
 ## Features
 
 ### Capture
