@@ -1,7 +1,7 @@
 <Window x:Class="SnapNoteStudio.Views.EditorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SnapNote Studio - Edit" 
+        Title="SnapNote Studio"
         WindowStartupLocation="CenterScreen"
         MinWidth="640" MinHeight="480"
         KeyDown="Window_KeyDown">

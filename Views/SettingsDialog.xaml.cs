@@ -20,7 +20,7 @@ public partial class SettingsDialog : Window
         InitializeComponent();
         _settingsService = settingsService;
         _initialLanguage = settingsService.Settings.Language;
-        VersionText.Text = $"SnapNote Studio {GetAppVersion()}";
+        VersionText.Text = $"Snapnote {AppVersionInfo.Current}";
         
         LoadSettings();
         ApplyLocalization();
@@ -41,12 +41,6 @@ public partial class SettingsDialog : Window
         CopyShortcutBox, SaveShortcutBox, OcrShortcutBox, TranslateShortcutBox, CloseShortcutBox
     };
 
-    private static string GetAppVersion()
-    {
-        var version = typeof(SettingsDialog).Assembly.GetName().Version;
-        return version == null ? string.Empty : version.ToString(3);
-    }
-    
     private void ApplyLocalization()
     {
         Title = L10n.Get("SettingsTitle");

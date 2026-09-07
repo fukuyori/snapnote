@@ -187,7 +187,7 @@ public partial class EditorWindow : Window
 
     private void ApplyLocalization()
     {
-        Title = L10n.Get("EditorTitle");
+        Title = $"{L10n.Get("EditorTitle")} {AppVersionInfo.Current}";
         
         // Header buttons
         ReuseWindowToggle.Content = L10n.Get("NewCapture");
