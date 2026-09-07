@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using SnapNoteStudio.Services;
 using WinForms = System.Windows.Forms;
 
@@ -12,11 +13,15 @@ namespace SnapNoteStudio.Views;
 public partial class OverlayWindow : Window
 {
     private const double DragThreshold = 5;
+    private const int GwlExStyle = -20;
+    private const int WsExTransparent = 0x00000020;
 
     private bool _isSelecting;
     private bool _isMouseDown;
     private bool _isShowingLastRegion;
     private bool _isCursorMessageVisible;
+    private bool _isCountingDown;
+    private int _captureDelaySeconds;
     private Point _startPoint;
     private Point _currentPoint;
     private BitmapSource? _screenCapture;
@@ -44,9 +49,16 @@ public partial class OverlayWindow : Window
         // Update full screen geometry
         FullScreenGeometry.Rect = new Rect(0, 0, Width, Height);
 
-        // Position instructions in center of primary screen
-        Canvas.SetLeft(Instructions, (SystemParameters.PrimaryScreenWidth - 200) / 2);
-        Canvas.SetTop(Instructions, (SystemParameters.PrimaryScreenHeight - 100) / 2);
+        // Position instructions in the center of the primary screen.
+        Instructions.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(
+            Instructions,
+            -SystemParameters.VirtualScreenLeft
+                + (SystemParameters.PrimaryScreenWidth - Instructions.DesiredSize.Width) / 2);
+        Canvas.SetTop(
+            Instructions,
+            -SystemParameters.VirtualScreenTop
+                + (SystemParameters.PrimaryScreenHeight - Instructions.DesiredSize.Height) / 2);
 
         // Activate and focus
         Activate();
@@ -55,6 +67,25 @@ public partial class OverlayWindow : Window
 
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
+        if (_isCountingDown)
+        {
+            if (e.Key == Key.Escape)
+            {
+                CaptureCancelled?.Invoke(this, EventArgs.Empty);
+                e.Handled = true;
+            }
+            return;
+        }
+
+        int timerSeconds = GetTimerSeconds(e.Key);
+        if (timerSeconds > 0 && !_isMouseDown)
+        {
+            _captureDelaySeconds = timerSeconds;
+            TimerInstruction.Text = $"{timerSeconds} 秒タイマーを設定（選択後に開始）";
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape)
         {
             if (_isShowingLastRegion)
@@ -99,6 +130,9 @@ public partial class OverlayWindow : Window
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (_isCountingDown)
+            return;
+
         _startPoint = e.GetPosition(this);
         _currentPoint = _startPoint;
         _isMouseDown = true;
@@ -113,6 +147,9 @@ public partial class OverlayWindow : Window
 
     private void Window_MouseMove(object sender, MouseEventArgs e)
     {
+        if (_isCountingDown)
+            return;
+
         if (_isCursorMessageVisible)
         {
             UpdateCursorMessagePosition(e.GetPosition(this));
@@ -171,6 +208,9 @@ public partial class OverlayWindow : Window
 
     private void Window_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (_isCountingDown)
+            return;
+
         if (!_isMouseDown) return;
 
         _currentPoint = e.GetPosition(this);
@@ -238,7 +278,7 @@ public partial class OverlayWindow : Window
             screenPixelRect.Height / scaleY);
     }
 
-    private void CompleteCapture(Rect selectionRect)
+    private async void CompleteCapture(Rect selectionRect)
     {
         if (selectionRect.Width <= 5 || selectionRect.Height <= 5)
         {
@@ -246,15 +286,109 @@ public partial class OverlayWindow : Window
             return;
         }
 
-        var capturedImage = CropBitmap(_screenCapture, selectionRect);
+        var captureSource = _captureDelaySeconds > 0
+            ? await CaptureScreenAfterCountdownAsync()
+            : _screenCapture;
+
+        if (captureSource == null)
+            return;
+
+        var capturedImage = CropBitmap(captureSource, selectionRect);
         CaptureCompleted?.Invoke(this, new CaptureEventArgs(capturedImage, selectionRect));
     }
 
-    private void CompleteWindowCapture(Rect screenPixelRect)
+    private async void CompleteWindowCapture(Rect screenPixelRect)
     {
-        var capturedImage = CropBitmapPixels(_screenCapture, screenPixelRect);
+        var captureSource = _captureDelaySeconds > 0
+            ? await CaptureScreenAfterCountdownAsync()
+            : _screenCapture;
+
+        if (captureSource == null)
+            return;
+
+        var capturedImage = CropBitmapPixels(captureSource, screenPixelRect);
         var captureRegion = ConvertScreenPixelsToOverlayRect(screenPixelRect);
         CaptureCompleted?.Invoke(this, new CaptureEventArgs(capturedImage, captureRegion));
+    }
+
+    private async Task<BitmapSource?> CaptureScreenAfterCountdownAsync()
+    {
+        _isCountingDown = true;
+        _isMouseDown = false;
+        _isSelecting = false;
+        ReleaseMouseCapture();
+
+        DarkOverlay.Visibility = Visibility.Collapsed;
+        SelectionBorder.Visibility = Visibility.Collapsed;
+        SizeIndicator.Visibility = Visibility.Collapsed;
+        Instructions.Visibility = Visibility.Collapsed;
+        HideCursorMessage();
+
+        CountdownIndicator.Visibility = Visibility.Visible;
+        CountdownIndicator.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(
+            CountdownIndicator,
+            -SystemParameters.VirtualScreenLeft
+                + (SystemParameters.PrimaryScreenWidth - CountdownIndicator.DesiredSize.Width) / 2);
+        Canvas.SetTop(
+            CountdownIndicator,
+            -SystemParameters.VirtualScreenTop
+                + (SystemParameters.PrimaryScreenHeight - CountdownIndicator.DesiredSize.Height) / 2);
+
+        EnableMouseClickThrough();
+
+        for (int remaining = _captureDelaySeconds; remaining > 0; remaining--)
+        {
+            CountdownText.Text = remaining.ToString();
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            if (!IsLoaded)
+                return null;
+        }
+
+        CountdownIndicator.Visibility = Visibility.Collapsed;
+        Hide();
+
+        // Let WPF and the desktop compositor remove the countdown before CopyFromScreen.
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        await Task.Delay(50);
+
+        var captureSource = ScreenCaptureService.CaptureScreen();
+        if (captureSource == null)
+        {
+            MessageBox.Show(
+                L10n.Get("CaptureFailed"),
+                L10n.Get("AppTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            CaptureCancelled?.Invoke(this, EventArgs.Empty);
+        }
+
+        return captureSource;
+    }
+
+    private void EnableMouseClickThrough()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        int extendedStyle = GetWindowLong(handle, GwlExStyle);
+        SetWindowLong(handle, GwlExStyle, extendedStyle | WsExTransparent);
+    }
+
+    private static int GetTimerSeconds(Key key)
+    {
+        return key switch
+        {
+            Key.D1 or Key.NumPad1 => 1,
+            Key.D2 or Key.NumPad2 => 2,
+            Key.D3 or Key.NumPad3 => 3,
+            Key.D4 or Key.NumPad4 => 4,
+            Key.D5 or Key.NumPad5 => 5,
+            Key.D6 or Key.NumPad6 => 6,
+            Key.D7 or Key.NumPad7 => 7,
+            Key.D8 or Key.NumPad8 => 8,
+            Key.D9 or Key.NumPad9 => 9,
+            _ => 0
+        };
     }
 
     private void UpdateSelection()
@@ -365,4 +499,10 @@ public partial class OverlayWindow : Window
             return null;
         }
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int GetWindowLong(IntPtr windowHandle, int index);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int SetWindowLong(IntPtr windowHandle, int index, int newLong);
 }

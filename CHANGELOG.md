@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.0 - 2026-09-07
+
+### Added
+- Added an optional 1–9 second capture timer. Press a number key before selecting an area or window to show a countdown and capture the latest screen when it reaches zero.
+
 ## 3.1.2 - 2026-08-06
 
 ### Fixed

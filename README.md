@@ -105,7 +105,7 @@ With Inno Setup installed, run the following:
 ```powershell
 .\scripts\build-installer.ps1
 
-# Output: installer_output/SnapNoteStudio_Setup_3.1.2.exe
+# Output: installer_output/SnapNoteStudio_Setup_3.2.0.exe
 ```
 
 ## Usage
@@ -117,10 +117,14 @@ With Inno Setup installed, run the following:
 
 ### Capture Mode
 
-1. Click and drag to select the area you want to capture
-2. Click a window without dragging to capture that window
-3. Press `Space` before dragging to show the previous capture region, then press `Enter` to capture it
-4. Press `Escape` to cancel
+1. Optionally press `1`–`9` to set a capture delay of 1–9 seconds
+2. Click and drag to select the area you want to capture
+3. Click a window without dragging to capture that window
+4. With a timer set, the countdown starts after selection and a fresh screenshot is taken when it reaches zero
+5. Press `Space` before dragging to show the previous capture region, then press `Enter` to capture it
+6. Press `Escape` to cancel
+
+If no number key is pressed, capture remains immediate.
 
 ### Editor
 
@@ -173,6 +177,7 @@ Right-click the system tray icon and select "Settings" to open the settings dial
 ### Capture Overlay
 | Shortcut | Action |
 |----------|--------|
+| 1–9 | Set a 1–9 second delay that starts after selecting an area or window |
 | Space | Show the previous capture region before dragging |
 | Enter | Capture the displayed previous region |
 | Escape | Cancel capture |

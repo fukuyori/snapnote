@@ -84,7 +84,31 @@
                            Foreground="#6B7280"
                            FontSize="11"
                            Margin="0,4,0,0"/>
+                <TextBlock x:Name="TimerInstruction"
+                           Text="1～9 キーでキャプチャタイマー（未指定は即時）"
+                           Foreground="#6B7280"
+                           FontSize="11"
+                           Margin="0,4,0,0"/>
             </StackPanel>
+        </Border>
+
+        <!-- Capture countdown -->
+        <Border x:Name="CountdownIndicator"
+                Width="128"
+                Height="128"
+                Background="#E61A1A2E"
+                BorderBrush="#4A7DFF"
+                BorderThickness="3"
+                CornerRadius="64"
+                IsHitTestVisible="False"
+                Visibility="Collapsed">
+            <TextBlock x:Name="CountdownText"
+                       Foreground="White"
+                       FontSize="64"
+                       FontWeight="Bold"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
         </Border>
     </Canvas>
 </Window>
