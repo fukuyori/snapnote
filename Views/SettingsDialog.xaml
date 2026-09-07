@@ -35,8 +35,16 @@
         </Grid.RowDefinitions>
 
         <!-- Title -->
-        <TextBlock x:Name="TitleText" Grid.Row="0" Text="Settings" FontSize="18" FontWeight="Bold"
-                   Foreground="White" Margin="0,0,0,20"/>
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="TitleText" Grid.Column="0" Text="Settings" FontSize="18" FontWeight="Bold"
+                       Foreground="White"/>
+            <TextBlock x:Name="VersionText" Grid.Column="1" FontSize="12" Foreground="#888888"
+                       HorizontalAlignment="Right"/>
+        </Grid>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-14,0" Padding="0,0,14,0">
             <StackPanel>

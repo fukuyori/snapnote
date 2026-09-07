@@ -128,7 +128,7 @@ Inno Setup をインストールした状態で以下を実行します：
 ```powershell
 .\scripts\build-installer.ps1
 
-# 出力先: installer_output/SnapNoteStudio_Setup_3.2.0.exe
+# 出力先: installer_output/SnapNoteStudio_Setup_3.2.1.exe
 ```
 
 ## 使い方

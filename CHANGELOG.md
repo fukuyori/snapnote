@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.1 - 2026-09-07
+
+### Added
+- The Settings dialog now displays the application version at the top.
+
 ## 3.2.0 - 2026-09-07
 
 ### Added
