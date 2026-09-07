@@ -4,7 +4,7 @@
   <img src="Resources/icon.svg" width="128" height="128" alt="SnapNote Studio Icon">
 </p>
 
-**SnapNote Studio** is a powerful screen capture and annotation tool for Windows. Capture any area of your screen and annotate it with arrows, shapes, text, blur effects, and more.
+**SnapNote Studio** is a screen capture and annotation tool for Windows. Capture any area of your screen, annotate it with arrows, shapes, text, and visual effects, extract text with Windows OCR, and translate OCR results with Ollama.
 
 [日本語版 README](README.ja.md)
 
@@ -22,6 +22,7 @@
 - **Region selection**: Click and drag to select any area of your screen
 - **Window selection**: Click a window to capture the visible window bounds
 - **Previous region capture**: Press `Space` before dragging to show the previous capture region, then press `Enter` to capture it again
+- **Capture timer**: Press `1`–`9` before selecting an area or window to capture it after a visible 1–9 second countdown
 - **Multi-monitor support**: Works seamlessly across multiple displays
 - **High DPI support**: Crisp captures on high-resolution displays
 
@@ -53,6 +54,14 @@
 - **Resize**: Scale the image with aspect ratio preservation
 - **Sharpen**: Apply a gentle sharpen filter to the image
 
+### OCR and Translation
+- **Windows OCR**: Extract text from the current image with the Windows OCR engine
+- **Multiple OCR languages**: Select one or more installed Windows OCR languages; the best recognition result is used automatically
+- **Structured text**: Preserve paragraphs and consecutive bullet or numbered list items in OCR output
+- **Integrated result pane**: Review, edit, copy, and resize the OCR result pane without leaving the editor; use `Ctrl` + mouse wheel to change its text size
+- **Ollama translation**: Translate OCR results through a configured Ollama endpoint and model, with a selectable or custom target language
+- **Quick and automatic processing**: Run OCR, OCR plus translation, Auto OCR, or Auto Translate directly from the editor
+
 ### Additional Features
 - **Editor zoom and pan**: Use the mouse wheel to zoom up to 1200%, then drag in Move mode or use the middle/right mouse button to pan
 - **Undo/Redo**: Full history support (Ctrl+Z / Ctrl+Y)
@@ -60,13 +69,19 @@
 - **Save to file**: Automatically saves PNG files with timestamp-based names (Ctrl+S)
 - **Save location setting**: Choose the folder used for automatic saves
 - **Customizable hotkey**: Choose your preferred capture shortcut
+- **Customizable editor shortcuts**: Configure Copy, Save, OCR, Translate, and Close key combinations
+- **Reuse editor window**: Use "New Here" to load the next capture into the current editor instead of opening another window
+- **Remembered workspace**: Editor size, position, maximized state, automatic OCR/translation toggles, and the reuse-window toggle are retained
 - **System tray**: Runs quietly in the background
 - **Multi-language**: English, Japanese, Simplified Chinese, Spanish, and Korean support
 
 ## System Requirements
 
 - Windows 10/11 (64-bit)
-- .NET 8.0 Runtime
+- An installed Windows OCR language pack for each language you want to recognize
+- Ollama and an installed model are required only for translation
+
+Release builds are self-contained; the .NET runtime does not need to be installed separately.
 
 ## Installation
 
@@ -103,7 +118,7 @@ dotnet run -c Release
 ```powershell
 .\scripts\build-release.ps1
 
-# Output: bin/Release/net8.0-windows/win-x64/publish/SnapNoteStudio.exe
+# Output: bin/Release/net8.0-windows10.0.19041.0/win-x64/publish/SnapNoteStudio.exe
 ```
 
 #### Creating the Installer
@@ -145,6 +160,15 @@ If no number key is pressed, capture remains immediate.
 7. Click "Save" or press `Ctrl+S` to save to the configured folder
 8. Use `Ctrl+X`, `Ctrl+W`, or `Ctrl+Q` for quick close workflows
 
+### OCR and Translation
+
+1. In Settings, select the installed Windows languages that OCR should try. If none are selected, the Windows profile languages are used
+2. Click "OCR" or press `Ctrl+Shift+O` to extract text into the resizable result pane
+3. Edit the recognized text if needed, then copy it with the pane's "Copy" button
+4. For translation, start Ollama and configure its endpoint and model in Settings. The default endpoint is `http://localhost:11434`
+5. Choose a target language and click "Translate", or use "Trans" / `Ctrl+Shift+T` to run OCR and translation together
+6. Enable "Auto OCR" or "Auto Trans" to process every newly loaded capture automatically
+
 ### Settings
 
 Right-click the system tray icon and select "Settings" to open the settings dialog.
@@ -157,6 +181,10 @@ Right-click the system tray icon and select "Settings" to open the settings dial
 | Save location | Folder used by automatic PNG saves. The folder is created when needed | Pictures\SnapNote Studio |
 | Thickness | Set the default stroke thickness for drawing tools (1–10) | 3 |
 | Opacity | Set the default opacity for drawing tools (10%–100%) | 100% |
+| OCR languages | Select one or more installed Windows OCR languages. With no selection, Windows profile languages are used | None selected |
+| Ollama endpoint | Ollama server used to translate OCR results | http://localhost:11434 |
+| Ollama model | Model used for translation; "Refresh" lists models available from the configured endpoint | Not set |
+| Editor shortcuts | Configure Copy, Save, OCR, Translate, and Close shortcuts; each must include Ctrl, Alt, or Win | See defaults below |
 
 ## Keyboard Shortcuts
 
@@ -165,16 +193,18 @@ Right-click the system tray icon and select "Settings" to open the settings dial
 |----------|--------|
 | Ctrl+Shift+S | Start capture (default, configurable) |
 
-### Editor
+### Editor (defaults)
 | Shortcut | Action |
 |----------|--------|
 | Ctrl+Z | Undo |
 | Ctrl+Y | Redo |
-| Ctrl+C | Copy to clipboard |
+| Ctrl+C | Copy to clipboard (configurable) |
 | Ctrl+X | Copy to clipboard and close |
-| Ctrl+S | Save to file |
+| Ctrl+S | Save to file (configurable) |
 | Ctrl+W | Save to file and close |
-| Ctrl+Q | Close without saving |
+| Ctrl+Shift+O | Run OCR (configurable) |
+| Ctrl+Shift+T | Run OCR and translate (configurable) |
+| Ctrl+Q | Close without saving (configurable) |
 | Delete | Delete selected annotation |
 | Escape | Deselect / Cancel crop mode |
 | Space | Switch to Move mode |
