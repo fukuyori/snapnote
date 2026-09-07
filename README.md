@@ -8,6 +8,10 @@
 
 [日本語版 README](README.ja.md)
 
+<p align="center">
+  <img src="images/screenshot1.png" width="100%" alt="SnapNote Studio editor showing annotation and image effect tools">
+</p>
+
 ## Features
 
 ### Capture
