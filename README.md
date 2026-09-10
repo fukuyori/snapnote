@@ -69,6 +69,7 @@
 - **Save to file**: Automatically saves PNG files with timestamp-based names (Ctrl+S)
 - **Save location setting**: Choose the folder used for automatic saves
 - **Customizable hotkey**: Choose your preferred capture shortcut
+- **Elevated-app hotkeys**: The signed installer keeps capture hotkeys available while administrator applications such as Rufus are active
 - **Customizable editor shortcuts**: Configure Copy, Save, OCR, Translate, and Close key combinations
 - **Reuse editor window**: Use "New Here" to load the next capture into the current editor instead of opening another window
 - **Remembered workspace**: Editor size, position, maximized state, automatic OCR/translation toggles, and the reuse-window toggle are retained
@@ -87,7 +88,9 @@ Release builds are self-contained; the .NET runtime does not need to be installe
 
 ### Option 1: Download Installer
 1. Download the installer (`SnapNoteStudio_Setup_x.x.x.exe`) from the [Latest Release](https://github.com/fukuyori/snapnote/releases/latest) page
-2. Run the installer and follow the on-screen instructions
+2. Run the installer as administrator and follow the on-screen instructions
+
+The signed release is installed under Program Files and uses Windows `uiAccess` so capture hotkeys can be received while elevated applications are active. UAC secure-desktop prompts cannot be captured.
 
 ### Option 2: Build from Source
 
@@ -119,16 +122,26 @@ dotnet run -c Release
 .\scripts\build-release.ps1
 
 # Output: bin/Release/net8.0-windows10.0.19041.0/win-x64/publish/SnapNoteStudio.exe
+
+# Plain unsigned build for local testing
+.\scripts\build-release.ps1 -NoUiAccess
 ```
+
+The default release executable contains `uiAccess="true"` and only starts after it is Authenticode-signed with a machine-trusted certificate and installed under Program Files. Use `-NoUiAccess` when running directly from the publish directory.
 
 #### Creating the Installer
 
 With Inno Setup installed, run the following:
 
 ```powershell
-.\scripts\build-installer.ps1
+# Signed per-machine installer with uiAccess support
+$env:CODESIGN_CERT = "<thumbprint | subject name | path\to\certificate.pfx>"
+.\scripts\build-installer.ps1 -Sign
 
-# Output: installer_output/SnapNoteStudio_Setup_3.2.2.exe
+# Output: installer_output/SnapNoteStudio_Setup_4.0.0.exe
+
+# Unsigned per-user installer without elevated-app hotkey support
+.\scripts\build-installer.ps1 -NoUiAccess
 ```
 
 ## Usage

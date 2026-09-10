@@ -1,12 +1,14 @@
 # Changelog
 
-## 3.2.2 - 2026-09-07
+## 4.0.0 - 2026-09-10
 
 ### Added
 - The image editor window now displays `SnapNote Studio` and the application version in its title.
+- Added a signed `uiAccess` release mode for receiving capture hotkeys while elevated applications are active.
 
 ### Changed
 - The Settings dialog uses the `Snapnote` application name, while the image editor title no longer includes a localized editing suffix.
+- Capture hotkeys now use a low-level keyboard hook instead of `RegisterHotKey`.
 
 ## 3.2.1 - 2026-09-07
 

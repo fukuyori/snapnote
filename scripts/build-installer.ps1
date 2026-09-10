@@ -2,10 +2,16 @@ param(
     [switch]$SkipPublish,
     [string]$IsccPath,
     [switch]$Sign,
-    [string]$SignToolPath
+    [string]$SignToolPath,
+    [switch]$NoUiAccess
 )
 
 $ErrorActionPreference = "Stop"
+
+$UiAccess = -not $NoUiAccess
+if ($UiAccess -and -not $Sign) {
+    throw "The default uiAccess build requires -Sign. Pass -Sign, or use -NoUiAccess for a plain per-user installer."
+}
 
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $ReleaseScript = Join-Path $PSScriptRoot "build-release.ps1"
@@ -124,6 +130,15 @@ function Invoke-CodeSign {
     }
 }
 
+function Test-UiAccessManifest {
+    param([string]$Path)
+
+    # The embedded manifest is stored uncompressed in the PE resources.
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $text = [System.Text.Encoding]::ASCII.GetString($bytes)
+    return $text.Contains('uiAccess="true"')
+}
+
 $SignSettings = $null
 $SignTool = $null
 
@@ -137,14 +152,22 @@ if ($Sign) {
 }
 
 if (-not $SkipPublish) {
-    & $ReleaseScript
+    & $ReleaseScript -NoUiAccess:$NoUiAccess
+}
+
+if (-not (Test-Path $PublishExePath)) {
+    throw "Executable was not found: $PublishExePath (run without -SkipPublish)"
+}
+
+$exeHasUiAccess = Test-UiAccessManifest -Path $PublishExePath
+if ($exeHasUiAccess -and -not $UiAccess) {
+    throw "The published executable contains a uiAccess manifest but -NoUiAccess was specified. Re-publish the executable."
+}
+if ($UiAccess -and -not $exeHasUiAccess) {
+    throw "The published executable does not contain a uiAccess manifest. Re-publish it, or pass -NoUiAccess."
 }
 
 if ($Sign) {
-    if (-not (Test-Path $PublishExePath)) {
-        throw "Executable to sign was not found: $PublishExePath"
-    }
-
     Write-Host "Signing application executable..."
     Invoke-CodeSign -SignTool $SignTool -Settings $SignSettings -TargetPath $PublishExePath
 }
@@ -172,6 +195,10 @@ if ([string]::IsNullOrWhiteSpace($IsccPath) -or -not (Test-Path $IsccPath)) {
 }
 
 $IsccArgs = @()
+
+if (-not $UiAccess) {
+    $IsccArgs += "/DNOUIACCESS"
+}
 
 if ($Sign) {
     # $q は Inno Setup が二重引用符に、$f は署名対象ファイル名に置き換える。
@@ -219,6 +246,8 @@ if ($setupFile) {
     if ($Sign) {
         Write-Host "Verifying signatures..."
         & $SignTool verify /pa /all $PublishExePath
+        if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $PublishExePath" }
         & $SignTool verify /pa /all $setupFile.FullName
+        if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $($setupFile.FullName)" }
     }
 }

@@ -1,7 +1,7 @@
 ; SnapNote Studio Inno Setup Script
 
 #define MyAppName "SnapNote Studio"
-#define MyAppVersion "3.2.2"
+#define MyAppVersion "4.0.0"
 #define MyAppPublisher "SnapNote Studio Team"
 #define MyAppExeName "SnapNoteStudio.exe"
 #define MyAppDescription "Screenshot capture and annotation tool"
@@ -22,7 +22,12 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+#ifdef NOUIACCESS
 PrivilegesRequired=lowest
+#else
+; uiAccess executables must be installed in a secure location such as Program Files.
+PrivilegesRequired=admin
+#endif
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 #ifdef SIGN
@@ -55,4 +60,5 @@ Type: files; Name: "{userstartup}\{#MyAppName}.lnk"
 Filename: "reg.exe"; Parameters: "delete ""HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" /v ""SnapNoteStudio"" /f"; Flags: runhidden; RunOnceId: "RemoveStartupRegistryValue"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} を起動"; Flags: nowait postinstall skipifsilent
+; uiAccess executables must be launched through ShellExecute/AppInfo.
+Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} を起動"; Flags: nowait postinstall skipifsilent shellexec

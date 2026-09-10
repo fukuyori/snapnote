@@ -69,6 +69,7 @@
 - **ファイルに保存**: 日時ベースのファイル名で PNG を自動保存（Ctrl+S）
 - **保存場所の設定**: 自動保存に使うフォルダーを設定可能
 - **カスタマイズ可能なホットキー**: お好みのキャプチャショートカットを選択
+- **管理者アプリでのホットキー**: 署名済みインストーラー版では、Rufusなど管理者権限で動作するアプリが前面でもキャプチャホットキーを利用可能
 - **編集ショートカットの変更**: コピー、保存、OCR、翻訳、終了のキー操作を設定可能
 - **エディターの再利用**: 「ここに表示」を有効にすると、次のキャプチャを新規ウインドウではなく現在のエディターへ読み込み
 - **作業状態の記憶**: エディターのサイズ・位置・最大化状態、自動OCR・自動翻訳、ウインドウ再利用の設定を保持
@@ -87,7 +88,9 @@
 
 ### 方法1: インストーラーをダウンロード
 1. [最新リリース](https://github.com/fukuyori/snapnote/releases/latest) ページからインストーラー（`SnapNoteStudio_Setup_x.x.x.exe`）をダウンロード
-2. インストーラーを実行し、画面の指示に従ってインストール
+2. インストーラーを管理者として実行し、画面の指示に従ってインストール
+
+署名済みリリースはProgram Files配下にインストールされ、Windowsの`uiAccess`を使用して、管理者権限のアプリが前面でもキャプチャホットキーを受信します。UACのセキュアデスクトップ画面はキャプチャできません。
 
 ### 方法2: ソースからビルド
 
@@ -119,16 +122,26 @@ dotnet run -c Release
 .\scripts\build-release.ps1
 
 # 出力先: bin/Release/net8.0-windows10.0.19041.0/win-x64/publish/SnapNoteStudio.exe
+
+# ローカル動作確認用の署名不要ビルド
+.\scripts\build-release.ps1 -NoUiAccess
 ```
+
+既定のリリース実行ファイルには`uiAccess="true"`が含まれます。マシンで信頼された証明書による署名とProgram Files配下への配置がなければ起動できません。publish出力から直接実行する場合は`-NoUiAccess`を指定してください。
 
 #### インストーラーの作成
 
 Inno Setup をインストールした状態で以下を実行します：
 
 ```powershell
-.\scripts\build-installer.ps1
+# uiAccess対応の署名済みマシン単位インストーラー
+$env:CODESIGN_CERT = "<拇印 | サブジェクト名 | path\to\certificate.pfx>"
+.\scripts\build-installer.ps1 -Sign
 
-# 出力先: installer_output/SnapNoteStudio_Setup_3.2.2.exe
+# 出力先: installer_output/SnapNoteStudio_Setup_4.0.0.exe
+
+# 管理者アプリでのホットキーに非対応の署名不要・ユーザー単位インストーラー
+.\scripts\build-installer.ps1 -NoUiAccess
 ```
 
 ## 使い方

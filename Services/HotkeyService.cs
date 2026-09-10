@@ -1,83 +1,143 @@
 using System.Runtime.InteropServices;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Interop;
 
 namespace SnapNoteStudio.Services;
 
 public class HotkeyService : IDisposable
 {
-    private const int WM_HOTKEY = 0x0312;
-    private const int HOTKEY_ID = 9000;
+    private const int WhKeyboardLl = 13;
+    private const int WmKeyDown = 0x0100;
+    private const int WmKeyUp = 0x0101;
+    private const int WmSysKeyDown = 0x0104;
+    private const int WmSysKeyUp = 0x0105;
 
-    private HwndSource? _source;
-    private IntPtr _windowHandle;
-    private bool _isRegistered;
+    private const int VkShift = 0x10;
+    private const int VkControl = 0x11;
+    private const int VkMenu = 0x12;
+    private const int VkLWin = 0x5B;
+    private const int VkRWin = 0x5C;
+
+    private readonly LowLevelKeyboardProc _hookProc;
+    private IntPtr _hook;
+    private uint _virtualKey;
+    private ModifierKeys _modifiers;
+    private bool _hotkeyDown;
 
     public event EventHandler? HotkeyPressed;
 
-    [DllImport("user32.dll")]
-    private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+    public HotkeyService()
+    {
+        _hookProc = HookCallback;
+    }
+
+    private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KbdLlHookStruct
+    {
+        public uint VirtualKeyCode;
+        public uint ScanCode;
+        public uint Flags;
+        public uint Time;
+        public UIntPtr ExtraInfo;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetWindowsHookExW(
+        int idHook,
+        LowLevelKeyboardProc callback,
+        IntPtr moduleHandle,
+        uint threadId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnhookWindowsHookEx(IntPtr hook);
 
     [DllImport("user32.dll")]
-    private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+    private static extern IntPtr CallNextHookEx(IntPtr hook, int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int virtualKey);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr GetModuleHandleW(string? moduleName);
 
     public bool RegisterHotkey(ModifierKeys modifiers, Key key)
     {
-        // Create a hidden window for receiving hotkey messages
-        var parameters = new HwndSourceParameters("SnapNoteStudioHotkey")
-        {
-            Width = 0,
-            Height = 0,
-            PositionX = 0,
-            PositionY = 0,
-            WindowStyle = 0x800000 // WS_POPUP
-        };
+        UnregisterHotkey();
 
-        _source = new HwndSource(parameters);
-        _source.AddHook(WndProc);
-        _windowHandle = _source.Handle;
-
-        // Convert WPF modifiers to Win32 modifiers
-        uint winModifiers = 0;
-        if (modifiers.HasFlag(ModifierKeys.Alt))
-            winModifiers |= 0x0001; // MOD_ALT
-        if (modifiers.HasFlag(ModifierKeys.Control))
-            winModifiers |= 0x0002; // MOD_CONTROL
-        if (modifiers.HasFlag(ModifierKeys.Shift))
-            winModifiers |= 0x0004; // MOD_SHIFT
-        if (modifiers.HasFlag(ModifierKeys.Windows))
-            winModifiers |= 0x0008; // MOD_WIN
-
-        // Convert WPF key to Win32 virtual key
-        uint vk = (uint)KeyInterop.VirtualKeyFromKey(key);
-
-        _isRegistered = RegisterHotKey(_windowHandle, HOTKEY_ID, winModifiers, vk);
-        return _isRegistered;
+        _modifiers = modifiers;
+        _virtualKey = (uint)KeyInterop.VirtualKeyFromKey(key);
+        _hook = SetWindowsHookExW(WhKeyboardLl, _hookProc, GetModuleHandleW(null), 0);
+        return _hook != IntPtr.Zero;
     }
 
     public void UnregisterHotkey()
     {
-        if (_isRegistered && _windowHandle != IntPtr.Zero)
+        if (_hook != IntPtr.Zero)
         {
-            UnregisterHotKey(_windowHandle, HOTKEY_ID);
-            _isRegistered = false;
+            UnhookWindowsHookEx(_hook);
+            _hook = IntPtr.Zero;
         }
 
-        _source?.RemoveHook(WndProc);
-        _source?.Dispose();
-        _source = null;
+        _hotkeyDown = false;
     }
 
-    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
+        if (nCode >= 0)
         {
-            HotkeyPressed?.Invoke(this, EventArgs.Empty);
-            handled = true;
+            var message = wParam.ToInt32();
+            var keyInfo = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
+
+            if (keyInfo.VirtualKeyCode == _virtualKey)
+            {
+                if (message is WmKeyDown or WmSysKeyDown && CurrentModifiers() == _modifiers)
+                {
+                    if (!_hotkeyDown)
+                    {
+                        _hotkeyDown = true;
+                        try
+                        {
+                            HotkeyPressed?.Invoke(this, EventArgs.Empty);
+                        }
+                        catch
+                        {
+                            // Exceptions must not escape an unmanaged hook callback.
+                        }
+                    }
+
+                    return new IntPtr(1);
+                }
+
+                if (message is WmKeyUp or WmSysKeyUp && _hotkeyDown)
+                {
+                    _hotkeyDown = false;
+                    return new IntPtr(1);
+                }
+            }
         }
-        return IntPtr.Zero;
+
+        return CallNextHookEx(_hook, nCode, wParam, lParam);
     }
+
+    private static ModifierKeys CurrentModifiers()
+    {
+        var modifiers = ModifierKeys.None;
+
+        if (IsKeyDown(VkShift))
+            modifiers |= ModifierKeys.Shift;
+        if (IsKeyDown(VkControl))
+            modifiers |= ModifierKeys.Control;
+        if (IsKeyDown(VkMenu))
+            modifiers |= ModifierKeys.Alt;
+        if (IsKeyDown(VkLWin) || IsKeyDown(VkRWin))
+            modifiers |= ModifierKeys.Windows;
+
+        return modifiers;
+    }
+
+    private static bool IsKeyDown(int virtualKey) => (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 
     public void Dispose()
     {

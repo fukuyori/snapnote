@@ -129,7 +129,9 @@ public partial class App : Application
 
     private void OnHotkeyPressed(object? sender, EventArgs e)
     {
-        Dispatcher.Invoke(StartCapture);
+        // Return from the low-level keyboard hook immediately. Screen capture and window creation
+        // must run later on the dispatcher or Windows can remove a hook that takes too long.
+        Dispatcher.BeginInvoke(new Action(StartCapture));
     }
 
     private void StartCapture()
