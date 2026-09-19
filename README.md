@@ -138,7 +138,7 @@ With Inno Setup installed, run the following:
 $env:CODESIGN_CERT = "<thumbprint | subject name | path\to\certificate.pfx>"
 .\scripts\build-installer.ps1 -Sign
 
-# Output: installer_output/SnapNoteStudio_Setup_4.0.0.exe
+# Output: installer_output/SnapNoteStudio_Setup_4.1.0.exe
 
 # Unsigned per-user installer without elevated-app hotkey support
 .\scripts\build-installer.ps1 -NoUiAccess
@@ -238,6 +238,11 @@ Right-click the system tray icon and select "Settings" to open the settings dial
 Settings are stored in:
 ```
 %APPDATA%\SnapNoteStudio\settings.json
+```
+
+Window-selection diagnostics are appended to:
+```
+%APPDATA%\SnapNoteStudio\logs\window-selection.log
 ```
 
 ## License

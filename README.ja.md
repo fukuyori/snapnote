@@ -138,7 +138,7 @@ Inno Setup をインストールした状態で以下を実行します：
 $env:CODESIGN_CERT = "<拇印 | サブジェクト名 | path\to\certificate.pfx>"
 .\scripts\build-installer.ps1 -Sign
 
-# 出力先: installer_output/SnapNoteStudio_Setup_4.0.0.exe
+# 出力先: installer_output/SnapNoteStudio_Setup_4.1.0.exe
 
 # 管理者アプリでのホットキーに非対応の署名不要・ユーザー単位インストーラー
 .\scripts\build-installer.ps1 -NoUiAccess
@@ -238,6 +238,11 @@ $env:CODESIGN_CERT = "<拇印 | サブジェクト名 | path\to\certificate.pfx>
 設定は以下の場所に保存されます：
 ```
 %APPDATA%\SnapNoteStudio\settings.json
+```
+
+ウインドウ選択の診断ログは以下へ追記されます：
+```
+%APPDATA%\SnapNoteStudio\logs\window-selection.log
 ```
 
 ## ライセンス

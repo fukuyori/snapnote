@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.0 - 2026-09-19
+
+### Added
+- Added diagnostic logging for window-selection candidates and results.
+
+### Fixed
+- Window selection now ignores full-screen Windows input and shell backing surfaces that could be mistaken for the selected window on the primary display.
+
 ## 4.0.0 - 2026-09-10
 
 ### Added
