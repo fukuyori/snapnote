@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.1.1 - 2026-10-11
+
+### Fixed
+- Disabled the tray icon hover tooltip to prevent it from remaining visible at the top-left of the primary display.
+
 ## 4.1.0 - 2026-09-19
 
 ### Added

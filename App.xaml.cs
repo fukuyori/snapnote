@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Threading;
 using Hardcodet.Wpf.TaskbarNotification;
 using SnapNoteStudio.Services;
 using SnapNoteStudio.Views;
@@ -29,7 +28,8 @@ public partial class App : Application
             ToolTipText = $"SnapNote Studio\n{_settingsService.Settings.CaptureHotkey}",
             ContextMenu = CreateContextMenu()
         };
-        _notifyIcon.TrayMouseDoubleClick += (s, e) => StartCapture();
+        _notifyIcon.TrayMouseDoubleClick += (s, e) => StartCapture("TrayDoubleClick");
+        _notifyIcon.PreviewTrayToolTipOpen += OnPreviewTrayToolTipOpen;
 
         // Register global hotkey
         _hotkeyService = new HotkeyService();
@@ -94,7 +94,7 @@ public partial class App : Application
         var menu = new System.Windows.Controls.ContextMenu();
 
         var captureItem = new System.Windows.Controls.MenuItem { Header = L10n.Get("Capture") };
-        captureItem.Click += (s, e) => StartCapture();
+        captureItem.Click += (s, e) => StartCapture("TrayMenu");
         menu.Items.Add(captureItem);
 
         menu.Items.Add(new System.Windows.Controls.Separator());
@@ -131,24 +131,37 @@ public partial class App : Application
     {
         // Return from the low-level keyboard hook immediately. Screen capture and window creation
         // must run later on the dispatcher or Windows can remove a hook that takes too long.
-        Dispatcher.BeginInvoke(new Action(StartCapture));
+        var hookDelayMs = _hotkeyService?.LastHookDelayMs ?? 0;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        Dispatcher.BeginInvoke(new Action(() => StartCapture("Hotkey", stopwatch, hookDelayMs)));
     }
 
-    private void StartCapture()
+    private void StartCapture(
+        string trigger,
+        System.Diagnostics.Stopwatch? stopwatch = null,
+        uint? hookDelayMs = null)
     {
-        if (_overlayWindow != null && _overlayWindow.IsVisible)
-            return;
+        stopwatch ??= System.Diagnostics.Stopwatch.StartNew();
+        var dispatchMs = stopwatch.ElapsedMilliseconds;
+        var timing = $"Capture trigger={trigger}"
+            + (hookDelayMs is { } hookDelay ? $" hookDelay={hookDelay}ms" : string.Empty)
+            + $" dispatch={dispatchMs}ms";
 
-        // The tray tooltip is a separate top-level WPF popup. If capture starts
-        // while it is open, CopyFromScreen bakes it into the captured image.
-        if (_notifyIcon?.TrayToolTipResolved is { IsOpen: true } trayToolTip)
-            trayToolTip.IsOpen = false;
+        if (_overlayWindow != null && _overlayWindow.IsVisible)
+        {
+            DiagnosticLog.Write($"{timing} ignored=overlay-visible");
+            return;
+        }
 
         // Capture screen BEFORE showing overlay
+        var captureStartMs = stopwatch.ElapsedMilliseconds;
         var screenCapture = ScreenCaptureService.CaptureScreen();
-        
+        var captureMs = stopwatch.ElapsedMilliseconds - captureStartMs;
+        timing += $" capture={captureMs}ms";
+
         if (screenCapture == null)
         {
+            DiagnosticLog.Write($"{timing} result=capture-failed");
             MessageBox.Show(
                 L10n.Get("CaptureFailed"),
                 L10n.Get("AppTitle"),
@@ -157,10 +170,31 @@ public partial class App : Application
             return;
         }
         
+        var createStartMs = stopwatch.ElapsedMilliseconds;
         _overlayWindow = new OverlayWindow(screenCapture, GetLastCaptureRegion());
         _overlayWindow.CaptureCompleted += OnCaptureCompleted;
         _overlayWindow.CaptureCancelled += OnCaptureCancelled;
-        _overlayWindow.Show();
+        var showStartMs = stopwatch.ElapsedMilliseconds;
+        timing += $" create={showStartMs - createStartMs}ms";
+
+        var overlay = _overlayWindow;
+        void OnOverlayContentRendered(object? sender, EventArgs args)
+        {
+            overlay.ContentRendered -= OnOverlayContentRendered;
+            DiagnosticLog.Write(
+                $"{timing} rendered={stopwatch.ElapsedMilliseconds - showStartMs}ms total={stopwatch.ElapsedMilliseconds}ms");
+        }
+        overlay.ContentRendered += OnOverlayContentRendered;
+
+        overlay.Show();
+    }
+
+    private void OnPreviewTrayToolTipOpen(object sender, RoutedEventArgs e)
+    {
+        // Keep ToolTipText as the notification-area identification string, but do not
+        // let Hardcodet open its WPF tooltip popup over the desktop or a capture.
+        e.Handled = true;
+        DiagnosticLog.Write("TrayToolTip suppressed");
     }
 
     private void OnCaptureCompleted(object? sender, CaptureEventArgs e)

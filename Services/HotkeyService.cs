@@ -25,6 +25,11 @@ public class HotkeyService : IDisposable
 
     public event EventHandler? HotkeyPressed;
 
+    /// <summary>
+    /// Milliseconds between the key event timestamp and the hook callback for the last hotkey press.
+    /// </summary>
+    public uint LastHookDelayMs { get; private set; }
+
     public HotkeyService()
     {
         _hookProc = HookCallback;
@@ -97,6 +102,8 @@ public class HotkeyService : IDisposable
                     if (!_hotkeyDown)
                     {
                         _hotkeyDown = true;
+                        // Both values are GetTickCount-based milliseconds; unsigned subtraction handles wraparound.
+                        LastHookDelayMs = unchecked((uint)Environment.TickCount - keyInfo.Time);
                         try
                         {
                             HotkeyPressed?.Invoke(this, EventArgs.Empty);
