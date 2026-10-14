@@ -65,9 +65,10 @@
 ### Additional Features
 - **Editor zoom and pan**: Use the mouse wheel to zoom up to 1200%, then drag in Move mode or use the middle/right mouse button to pan
 - **Undo/Redo**: Full history support (Ctrl+Z / Ctrl+Y)
-- **Copy to clipboard**: Quick sharing (Ctrl+C)
+- **Copy to clipboard**: Automatically copies the image when capture completes; use Ctrl+C to copy the edited image
 - **Save to file**: Automatically saves PNG files with timestamp-based names (Ctrl+S)
 - **Save location setting**: Choose the folder used for automatic saves
+- **Open save folder**: Right-click Save and use the context menu to open the save folder in Explorer (creates the folder if needed)
 - **Customizable hotkey**: Choose your preferred capture shortcut
 - **Elevated-app hotkeys**: The signed installer keeps capture hotkeys available while administrator applications such as Rufus are active
 - **Customizable editor shortcuts**: Configure Copy, Save, OCR, Translate, and Close key combinations
@@ -138,7 +139,7 @@ With Inno Setup installed, run the following:
 $env:CODESIGN_CERT = "<thumbprint | subject name | path\to\certificate.pfx>"
 .\scripts\build-installer.ps1 -Sign
 
-# Output: installer_output/SnapNoteStudio_Setup_4.1.1.exe
+# Output: installer_output/SnapNoteStudio_Setup_4.2.0.exe
 
 # Unsigned per-user installer without elevated-app hotkey support
 .\scripts\build-installer.ps1 -NoUiAccess

@@ -215,7 +215,14 @@
                                 ToolTip="Copy (Ctrl+C)" Click="CopyButton_Click"/>
                         <Button x:Name="SaveButton" Content="💾 Save" Style="{StaticResource ActionButtonStyle}"
                                 ToolTip="Save (Ctrl+S)" Click="SaveButton_Click"
-                                Background="{StaticResource PrimaryBrush}" Foreground="White"/>
+                                Background="{StaticResource PrimaryBrush}" Foreground="White">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem x:Name="OpenSaveDirectoryMenuItem" Header="Open save folder"
+                                              Click="OpenSaveDirectoryMenuItem_Click"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
                     </StackPanel>
                 </Grid>
                 

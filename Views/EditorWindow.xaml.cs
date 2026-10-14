@@ -200,6 +200,7 @@ public partial class EditorWindow : Window
         RedoButton.Content = L10n.Get("Redo");
         CopyButton.Content = L10n.Get("Copy");
         SaveButton.Content = L10n.Get("Save");
+        OpenSaveDirectoryMenuItem.Header = L10n.Get("OpenSaveDirectory");
         
         // Header labels
         ColorLabel.Text = L10n.Get("Color");
@@ -1823,13 +1824,37 @@ public partial class EditorWindow : Window
         }
     }
 
+    private string GetSaveDirectory()
+    {
+        return string.IsNullOrWhiteSpace(_settingsService?.Settings.SaveDirectory)
+            ? SettingsService.DefaultSaveDirectory
+            : _settingsService.Settings.SaveDirectory;
+    }
+
+    private void OpenSaveDirectoryMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var saveDirectory = System.IO.Path.GetFullPath(GetSaveDirectory());
+            System.IO.Directory.CreateDirectory(saveDirectory);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(saveDirectory)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.Write($"Open save directory failed: {ex}");
+            MessageBox.Show(this, $"{L10n.Get("OpenSaveDirectoryFailed")}: {ex.Message}",
+                L10n.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private bool SaveToFile()
     {
         try
         {
-            var saveDirectory = string.IsNullOrWhiteSpace(_settingsService?.Settings.SaveDirectory)
-                ? SettingsService.DefaultSaveDirectory
-                : _settingsService.Settings.SaveDirectory;
+            var saveDirectory = GetSaveDirectory();
 
             System.IO.Directory.CreateDirectory(saveDirectory);
 

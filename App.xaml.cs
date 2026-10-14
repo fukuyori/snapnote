@@ -204,6 +204,19 @@ public partial class App : Application
 
         if (e.CapturedImage != null && e.CapturedImage.PixelWidth > 0 && e.CapturedImage.PixelHeight > 0)
         {
+            try
+            {
+                Clipboard.SetImage(e.CapturedImage);
+            }
+            catch (Exception ex)
+            {
+                DiagnosticLog.Write($"Capture clipboard copy failed: {ex}");
+                _notifyIcon?.ShowBalloonTip(
+                    L10n.Get("AppTitle"),
+                    $"{L10n.Get("CopyFailed")}: {ex.Message}",
+                    BalloonIcon.Warning);
+            }
+
             SaveLastCaptureRegion(e.CaptureRegion);
 
             if (_reuseTargetWindow != null && _reuseTargetWindow.TryLoadCapture(e.CapturedImage, e.CaptureRegion))

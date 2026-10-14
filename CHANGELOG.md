@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.2.0 - 2026-10-15
+
+### Added
+- Automatically copy the captured image to the clipboard when capture completes, including when reusing an editor window.
+- Added a context menu to the Save button to open the configured save folder in Explorer, creating the folder if needed.
+
 ## 4.1.1 - 2026-10-11
 
 ### Fixed
