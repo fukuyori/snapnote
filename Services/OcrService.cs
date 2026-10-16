@@ -54,7 +54,7 @@ public static class OcrService
                 continue;
             }
 
-            var text = BuildStructuredText(result);
+            var text = BuildStructuredText(result, engine.RecognizerLanguage.LanguageTag);
             var score = text.Count(char.IsLetterOrDigit);
 
             if (score > bestScore)
@@ -72,7 +72,7 @@ public static class OcrService
     /// gap between lines to tell a wrapped continuation from a genuine new paragraph — the
     /// Windows OCR API only returns a flat list of lines with no structure of its own.
     /// </summary>
-    private static string BuildStructuredText(OcrResult result)
+    private static string BuildStructuredText(OcrResult result, string languageTag)
     {
         var lines = result.Lines;
         if (lines.Count == 0)
@@ -127,7 +127,7 @@ public static class OcrService
                     sb.AppendLine();
             }
 
-            sb.Append(string.Join(" ", blocks[i].Lines));
+            sb.Append(OcrTextFormatter.JoinLines(blocks[i].Lines, languageTag));
         }
 
         return sb.ToString();

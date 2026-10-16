@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.3.0 - 2026-10-16
+
+### Fixed
+- Remove extra single spaces around Japanese characters and punctuation in Japanese OCR results, including wrapped lines, while preserving spaces between English words and paragraph/list structure.
+
 ## 4.2.0 - 2026-10-15
 
 ### Added
