@@ -19,6 +19,7 @@ public partial class EditorWindow : Window
     private const double EditorMargin = 20.0;
 
     private BitmapSource _capturedImage;
+    private readonly PixelationRenderer _pixelationRenderer = new();
     private Rect _captureRegion;
     private readonly List<Annotation> _annotations = new();
     private readonly UndoRedoService _undoRedo = new();
@@ -799,6 +800,7 @@ public partial class EditorWindow : Window
         
         var croppedBitmap = new CroppedBitmap(_capturedImage, new Int32Rect(x, y, width, height));
         _capturedImage = ConvertToWriteableBitmap(croppedBitmap);
+        _pixelationRenderer.Clear();
         BackgroundImage.Source = _capturedImage;
         
         // Adjust annotations
@@ -831,6 +833,7 @@ public partial class EditorWindow : Window
     {
         var rotated = new TransformedBitmap(_capturedImage, new RotateTransform(90));
         _capturedImage = ConvertToWriteableBitmap(rotated);
+        _pixelationRenderer.Clear();
         BackgroundImage.Source = _capturedImage;
         
         // Rotate annotations
@@ -886,6 +889,7 @@ public partial class EditorWindow : Window
             
             var scaled = new TransformedBitmap(_capturedImage, new ScaleTransform(scaleX, scaleY));
             _capturedImage = ConvertToWriteableBitmap(scaled);
+            _pixelationRenderer.Clear();
             BackgroundImage.Source = _capturedImage;
             
             // Scale annotations
@@ -908,6 +912,7 @@ public partial class EditorWindow : Window
     private void SetCapturedImage(BitmapSource image)
     {
         _capturedImage = image;
+        _pixelationRenderer.Clear();
         BackgroundImage.Source = _capturedImage;
         RedrawAnnotations();
         UpdateStatus();
@@ -960,6 +965,7 @@ public partial class EditorWindow : Window
 
         _capturedImage = image;
         _captureRegion = captureRegion;
+        _pixelationRenderer.Clear();
         _annotations.Clear();
         _selectedAnnotation = null;
         _nextStepNumber = 1;
@@ -1305,69 +1311,20 @@ public partial class EditorWindow : Window
 
     private UIElement CreateMosaicShape(MosaicAnnotation mosaic)
     {
-        var bounds = mosaic.GetBounds();
-        if (bounds.Width <= 0 || bounds.Height <= 0) return new Canvas();
-        
-        var grid = new Canvas { Width = bounds.Width, Height = bounds.Height, ClipToBounds = true };
-        
-        int blockSize = mosaic.BlockSize;
-        for (int y = 0; y < bounds.Height; y += blockSize)
-        {
-            for (int x = 0; x < bounds.Width; x += blockSize)
-            {
-                var color = GetAverageColor(
-                    (int)(bounds.X + x), (int)(bounds.Y + y),
-                    Math.Min(blockSize, (int)(bounds.Width - x)),
-                    Math.Min(blockSize, (int)(bounds.Height - y)));
-                
-                var rect = new Rectangle
-                {
-                    Width = blockSize, Height = blockSize,
-                    Fill = new SolidColorBrush(color)
-                };
-                Canvas.SetLeft(rect, x);
-                Canvas.SetTop(rect, y);
-                grid.Children.Add(rect);
-            }
-        }
-        
-        Canvas.SetLeft(grid, bounds.X);
-        Canvas.SetTop(grid, bounds.Y);
-        return grid;
-    }
+        var region = _pixelationRenderer.Render(_capturedImage, mosaic, mosaic.GetBounds(), mosaic.BlockSize);
+        if (region == null) return new Canvas();
 
-    private Color GetAverageColor(int x, int y, int width, int height)
-    {
-        if (_capturedImage is not BitmapSource bmp) return Colors.Gray;
-        
-        x = Math.Clamp(x, 0, bmp.PixelWidth - 1);
-        y = Math.Clamp(y, 0, bmp.PixelHeight - 1);
-        width = Math.Clamp(width, 1, bmp.PixelWidth - x);
-        height = Math.Clamp(height, 1, bmp.PixelHeight - y);
-        
-        var stride = bmp.PixelWidth * 4;
-        var pixels = new byte[stride * bmp.PixelHeight];
-        
-        var converted = new FormatConvertedBitmap(bmp, PixelFormats.Bgra32, null, 0);
-        converted.CopyPixels(pixels, stride, 0);
-        
-        long r = 0, g = 0, b = 0;
-        int count = 0;
-        
-        for (int py = y; py < y + height && py < bmp.PixelHeight; py++)
+        var image = new Image
         {
-            for (int px = x; px < x + width && px < bmp.PixelWidth; px++)
-            {
-                int idx = py * stride + px * 4;
-                b += pixels[idx];
-                g += pixels[idx + 1];
-                r += pixels[idx + 2];
-                count++;
-            }
-        }
-        
-        if (count == 0) return Colors.Gray;
-        return Color.FromRgb((byte)(r / count), (byte)(g / count), (byte)(b / count));
+            Source = region.Image,
+            Width = region.Bounds.Width,
+            Height = region.Bounds.Height,
+            Stretch = Stretch.Fill
+        };
+        RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.NearestNeighbor);
+        Canvas.SetLeft(image, region.Bounds.X);
+        Canvas.SetTop(image, region.Bounds.Y);
+        return image;
     }
 
     private UIElement CreateBlurShape(BlurAnnotation blur)
@@ -1970,37 +1927,21 @@ public partial class EditorWindow : Window
 
     private void DrawMosaicToContext(DrawingContext context, MosaicAnnotation mosaic)
     {
-        var bounds = mosaic.GetBounds();
-        int blockSize = mosaic.BlockSize;
-        
-        for (int y = 0; y < bounds.Height; y += blockSize)
-        {
-            for (int x = 0; x < bounds.Width; x += blockSize)
-            {
-                var color = GetAverageColor((int)(bounds.X + x), (int)(bounds.Y + y),
-                    Math.Min(blockSize, (int)(bounds.Width - x)), Math.Min(blockSize, (int)(bounds.Height - y)));
-                context.DrawRectangle(new SolidColorBrush(color), null,
-                    new Rect(bounds.X + x, bounds.Y + y, blockSize, blockSize));
-            }
-        }
+        DrawPixelatedToContext(context, mosaic, mosaic.BlockSize);
     }
 
     private void DrawBlurToContext(DrawingContext context, BlurAnnotation blur)
     {
         // For export, we approximate blur with mosaic
-        var bounds = blur.GetBounds();
         int blockSize = Math.Max(3, (int)(blur.BlurRadius / 2));
-        
-        for (int y = 0; y < bounds.Height; y += blockSize)
-        {
-            for (int x = 0; x < bounds.Width; x += blockSize)
-            {
-                var color = GetAverageColor((int)(bounds.X + x), (int)(bounds.Y + y),
-                    Math.Min(blockSize, (int)(bounds.Width - x)), Math.Min(blockSize, (int)(bounds.Height - y)));
-                context.DrawRectangle(new SolidColorBrush(color), null,
-                    new Rect(bounds.X + x, bounds.Y + y, blockSize, blockSize));
-            }
-        }
+        DrawPixelatedToContext(context, blur, blockSize);
+    }
+
+    private void DrawPixelatedToContext(DrawingContext context, Annotation annotation, int blockSize)
+    {
+        var region = _pixelationRenderer.Render(_capturedImage, annotation, annotation.GetBounds(), blockSize);
+        if (region != null)
+            context.DrawImage(region.Image, region.Bounds);
     }
 
     private void DrawSpotlightToContext(DrawingContext context, SpotlightAnnotation spotlight)

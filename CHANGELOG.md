@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.3.1 - 2026-10-24
+
+### Fixed
+- Avoid repeatedly copying the full capture and creating thousands of rectangles while drawing a large mosaic. Reuse source pixels and cached mosaic images for preview and export, and clip partial blocks to the selected region.
+- Apply the same pixel-buffer reuse to the existing blur export path.
+
 ## 4.3.0 - 2026-10-16
 
 ### Fixed
