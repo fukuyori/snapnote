@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.3.2 - 2026-10-25
+
+### Fixed
+- Use physical desktop coordinates for capture selection and cropping on displays with different scaling settings. Position the overlay in physical pixels and log selection/crop coordinates for diagnosis.
+- Save the previous capture region in physical desktop coordinates. Legacy regions without DPI information are ignored until a new capture is made.
+
 ## 4.3.1 - 2026-10-24
 
 ### Fixed

@@ -155,7 +155,7 @@ public partial class App : Application
 
         // Capture screen BEFORE showing overlay
         var captureStartMs = stopwatch.ElapsedMilliseconds;
-        var screenCapture = ScreenCaptureService.CaptureScreen();
+        var screenCapture = ScreenCaptureService.CaptureScreen(out var screenBounds);
         var captureMs = stopwatch.ElapsedMilliseconds - captureStartMs;
         timing += $" capture={captureMs}ms";
 
@@ -171,7 +171,7 @@ public partial class App : Application
         }
         
         var createStartMs = stopwatch.ElapsedMilliseconds;
-        _overlayWindow = new OverlayWindow(screenCapture, GetLastCaptureRegion());
+        _overlayWindow = new OverlayWindow(screenCapture, screenBounds, GetLastCaptureRegion());
         _overlayWindow.CaptureCompleted += OnCaptureCompleted;
         _overlayWindow.CaptureCancelled += OnCaptureCancelled;
         var showStartMs = stopwatch.ElapsedMilliseconds;
@@ -268,7 +268,7 @@ public partial class App : Application
     private Rect? GetLastCaptureRegion()
     {
         var region = _settingsService.Settings.LastCaptureRegion;
-        if (region == null || region.Width <= 5 || region.Height <= 5)
+        if (region == null || !region.IsPhysicalScreenCoordinates || region.Width <= 5 || region.Height <= 5)
             return null;
 
         return new Rect(region.X, region.Y, region.Width, region.Height);
@@ -281,6 +281,7 @@ public partial class App : Application
 
         _settingsService.Settings.LastCaptureRegion = new SavedCaptureRegion
         {
+            IsPhysicalScreenCoordinates = true,
             X = region.X,
             Y = region.Y,
             Width = region.Width,

@@ -1,7 +1,7 @@
 ; SnapNote Studio Inno Setup Script
 
 #define MyAppName "SnapNote Studio"
-#define MyAppVersion "4.3.1"
+#define MyAppVersion "4.3.2"
 #define MyAppPublisher "SnapNote Studio Team"
 #define MyAppExeName "SnapNoteStudio.exe"
 #define MyAppDescription "Screenshot capture and annotation tool"

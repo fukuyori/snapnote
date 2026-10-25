@@ -21,9 +21,13 @@ public static class ScreenCaptureService
     /// <summary>
     /// Capture the entire virtual screen (all monitors)
     /// </summary>
-    public static BitmapSource? CaptureScreen()
+    public static BitmapSource? CaptureScreen() => CaptureScreen(out _);
+
+    public static BitmapSource? CaptureScreen(out System.Windows.Rect screenBounds)
     {
         var virtualScreen = WinForms.SystemInformation.VirtualScreen;
+        screenBounds = new System.Windows.Rect(
+            virtualScreen.Left, virtualScreen.Top, virtualScreen.Width, virtualScreen.Height);
         
         if (virtualScreen.Width <= 0 || virtualScreen.Height <= 0)
             return null;

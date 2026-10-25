@@ -22,47 +22,112 @@ public partial class OverlayWindow : Window
     private bool _isCursorMessageVisible;
     private bool _isCountingDown;
     private int _captureDelaySeconds;
-    private Point _startPoint;
-    private Point _currentPoint;
+    private Point _startScreenPoint;
+    private Point _currentScreenPoint;
+    private Rect _captureScreenBounds;
     private BitmapSource? _screenCapture;
     private readonly Rect? _lastCaptureRegion;
 
     public event EventHandler<CaptureEventArgs>? CaptureCompleted;
     public event EventHandler? CaptureCancelled;
 
-    public OverlayWindow(BitmapSource? screenCapture, Rect? lastCaptureRegion = null)
+    public OverlayWindow(BitmapSource? screenCapture, Rect screenBounds, Rect? lastCaptureRegion = null)
     {
         InitializeComponent();
         _screenCapture = screenCapture;
+        _captureScreenBounds = screenBounds;
         _lastCaptureRegion = lastCaptureRegion;
         Loaded += OnLoaded;
+        SizeChanged += (_, _) => { if (IsLoaded) UpdateOverlayLayout(); };
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        PositionOverlay();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // Use WPF SystemParameters for window positioning (already in DIPs)
-        Left = SystemParameters.VirtualScreenLeft;
-        Top = SystemParameters.VirtualScreenTop;
-        Width = SystemParameters.VirtualScreenWidth;
-        Height = SystemParameters.VirtualScreenHeight;
-
-        // Update full screen geometry
-        FullScreenGeometry.Rect = new Rect(0, 0, Width, Height);
-
-        // Position instructions in the center of the primary screen.
-        Instructions.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Canvas.SetLeft(
-            Instructions,
-            -SystemParameters.VirtualScreenLeft
-                + (SystemParameters.PrimaryScreenWidth - Instructions.DesiredSize.Width) / 2);
-        Canvas.SetTop(
-            Instructions,
-            -SystemParameters.VirtualScreenTop
-                + (SystemParameters.PrimaryScreenHeight - Instructions.DesiredSize.Height) / 2);
+        PositionOverlay();
+        UpdateLayout();
+        UpdateOverlayLayout();
+        LogCoordinates("loaded");
 
         // Activate and focus
         Activate();
         Focus();
+    }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        // WPF may apply the WM_DPICHANGED suggested size. Restore the physical
+        // desktop bounds after that handling, without treating them as DIPs.
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+        {
+            if (!IsVisible || _isCountingDown) return;
+            PositionOverlay();
+            UpdateLayout();
+            UpdateOverlayLayout();
+            LogCoordinates("dpi-changed");
+        }));
+    }
+
+    private void PositionOverlay()
+    {
+        const uint flags = 0x0004 | 0x0010; // SWP_NOZORDER | SWP_NOACTIVATE
+        if (!SetWindowPos(new WindowInteropHelper(this).Handle, IntPtr.Zero,
+            (int)_captureScreenBounds.X, (int)_captureScreenBounds.Y,
+            (int)_captureScreenBounds.Width, (int)_captureScreenBounds.Height, flags))
+        {
+            DiagnosticLog.Write($"CaptureCoordinates SetWindowPos failed error={System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
+            CaptureCancelled?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void UpdateOverlayLayout()
+    {
+        FullScreenGeometry.Rect = new Rect(0, 0, OverlayCanvas.ActualWidth, OverlayCanvas.ActualHeight);
+        CenterOnPrimaryScreen(Instructions);
+        if (_isSelecting || _isShowingLastRegion) UpdateSelection();
+    }
+
+    private void CenterOnPrimaryScreen(FrameworkElement element)
+    {
+        var primary = WinForms.Screen.PrimaryScreen?.Bounds;
+        if (primary == null) return;
+        var center = OverlayCanvas.PointFromScreen(new Point(
+            primary.Value.Left + primary.Value.Width / 2.0,
+            primary.Value.Top + primary.Value.Height / 2.0));
+        element.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(element, center.X - element.DesiredSize.Width / 2);
+        Canvas.SetTop(element, center.Y - element.DesiredSize.Height / 2);
+    }
+
+    private bool TryGetScreenPoint(out Point point)
+    {
+        if (GetPhysicalCursorPos(out var cursor))
+        {
+            point = new Point(cursor.X, cursor.Y);
+            return true;
+        }
+        point = default;
+        DiagnosticLog.Write($"CaptureCoordinates GetPhysicalCursorPos failed error={System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
+        CaptureCancelled?.Invoke(this, EventArgs.Empty);
+        return false;
+    }
+
+    private void LogCoordinates(string stage)
+    {
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var handle = new WindowInteropHelper(this).Handle;
+        string window = GetWindowRect(handle, out var rect)
+            ? $"({rect.Left},{rect.Top},{rect.Right - rect.Left},{rect.Bottom - rect.Top})" : "unavailable";
+        DiagnosticLog.Write($"CaptureCoordinates stage={stage} screen={_captureScreenBounds} hwnd={window} "
+            + $"overlayDip={OverlayCanvas.ActualWidth}x{OverlayCanvas.ActualHeight} dpi={dpi.DpiScaleX},{dpi.DpiScaleY} "
+            + $"bitmap={_screenCapture?.PixelWidth}x{_screenCapture?.PixelHeight} "
+            + $"startPx={_startScreenPoint} endPx={_currentScreenPoint}");
     }
 
     private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -102,18 +167,17 @@ public partial class OverlayWindow : Window
         {
             if (_isShowingLastRegion)
             {
-                CompleteCapture(GetSelectionRect());
+                CompleteCapture(GetSelectionScreenRect());
             }
             else
             {
-                ShowLastCaptureRegion();
-                ShowCursorMessage("ウインドウ選択中");
+                if (ShowLastCaptureRegion()) ShowCursorMessage("ウインドウ選択中");
             }
             e.Handled = true;
         }
         else if ((e.Key == Key.Enter || e.Key == Key.Return) && _isShowingLastRegion)
         {
-            CompleteCapture(GetSelectionRect());
+            CompleteCapture(GetSelectionScreenRect());
             e.Handled = true;
         }
     }
@@ -133,8 +197,9 @@ public partial class OverlayWindow : Window
         if (_isCountingDown)
             return;
 
-        _startPoint = e.GetPosition(this);
-        _currentPoint = _startPoint;
+        if (!TryGetScreenPoint(out _startScreenPoint)) return;
+        _currentScreenPoint = _startScreenPoint;
+        LogCoordinates("mouse-down");
         _isMouseDown = true;
         _isSelecting = false;
         _isShowingLastRegion = false;
@@ -158,7 +223,7 @@ public partial class OverlayWindow : Window
         if (!_isMouseDown)
             return;
 
-        _currentPoint = e.GetPosition(this);
+        if (!TryGetScreenPoint(out _currentScreenPoint)) return;
 
         if (!_isSelecting && IsDragPastThreshold())
         {
@@ -213,14 +278,15 @@ public partial class OverlayWindow : Window
 
         if (!_isMouseDown) return;
 
-        _currentPoint = e.GetPosition(this);
+        if (!TryGetScreenPoint(out _currentScreenPoint)) return;
+        LogCoordinates("mouse-up");
         _isMouseDown = false;
         ReleaseMouseCapture();
 
         if (_isSelecting)
         {
             _isSelecting = false;
-            CompleteCapture(GetSelectionRect());
+            CompleteCapture(GetSelectionScreenRect());
         }
         else
         {
@@ -230,23 +296,28 @@ public partial class OverlayWindow : Window
 
     private bool IsDragPastThreshold()
     {
-        return Math.Abs(_currentPoint.X - _startPoint.X) >= DragThreshold
-            || Math.Abs(_currentPoint.Y - _startPoint.Y) >= DragThreshold;
+        var start = OverlayCanvas.PointFromScreen(_startScreenPoint);
+        var current = OverlayCanvas.PointFromScreen(_currentScreenPoint);
+        return Math.Abs(current.X - start.X) >= DragThreshold
+            || Math.Abs(current.Y - start.Y) >= DragThreshold;
     }
 
-    private void ShowLastCaptureRegion()
+    private bool ShowLastCaptureRegion()
     {
         if (_lastCaptureRegion is not { Width: > 5, Height: > 5 } region)
-            return;
+            return false;
 
-        _startPoint = new Point(region.Left, region.Top);
-        _currentPoint = new Point(region.Right, region.Bottom);
+        region.Intersect(_captureScreenBounds);
+        if (region.IsEmpty || region.Width <= 5 || region.Height <= 5) return false;
+        _startScreenPoint = region.TopLeft;
+        _currentScreenPoint = region.BottomRight;
         _isShowingLastRegion = true;
 
         Instructions.Visibility = Visibility.Collapsed;
         SelectionBorder.Visibility = Visibility.Visible;
         SizeIndicator.Visibility = Visibility.Visible;
         UpdateSelection();
+        return true;
     }
 
     private void CaptureWindowUnderCursor()
@@ -260,22 +331,17 @@ public partial class OverlayWindow : Window
             return;
         }
 
-        CompleteWindowCapture(windowRect.Value);
+        // WindowSelectionService returns pixels relative to the current virtual desktop.
+        var screenBounds = ScreenCaptureService.GetVirtualScreenBounds();
+        var absoluteRect = windowRect.Value;
+        absoluteRect.Offset(screenBounds.X, screenBounds.Y);
+        CompleteCapture(absoluteRect);
     }
 
-    private Rect ConvertScreenPixelsToOverlayRect(Rect screenPixelRect)
+    private Rect ScreenRectToOverlayRect(Rect screenRect)
     {
-        if (_screenCapture == null || ActualWidth <= 0 || ActualHeight <= 0)
-            return screenPixelRect;
-
-        double scaleX = _screenCapture.PixelWidth / ActualWidth;
-        double scaleY = _screenCapture.PixelHeight / ActualHeight;
-
-        return new Rect(
-            screenPixelRect.X / scaleX,
-            screenPixelRect.Y / scaleY,
-            screenPixelRect.Width / scaleX,
-            screenPixelRect.Height / scaleY);
+        return new Rect(OverlayCanvas.PointFromScreen(screenRect.TopLeft),
+            OverlayCanvas.PointFromScreen(screenRect.BottomRight));
     }
 
     private async void CompleteCapture(Rect selectionRect)
@@ -293,22 +359,30 @@ public partial class OverlayWindow : Window
         if (captureSource == null)
             return;
 
-        var capturedImage = CropBitmap(captureSource, selectionRect);
-        CaptureCompleted?.Invoke(this, new CaptureEventArgs(capturedImage, selectionRect));
-    }
-
-    private async void CompleteWindowCapture(Rect screenPixelRect)
-    {
-        var captureSource = _captureDelaySeconds > 0
-            ? await CaptureScreenAfterCountdownAsync()
-            : _screenCapture;
-
-        if (captureSource == null)
+        var crop = CaptureCoordinates.GetCropRect(selectionRect, _captureScreenBounds,
+            captureSource.PixelWidth, captureSource.PixelHeight);
+        DiagnosticLog.Write($"CaptureCoordinates selectedScreenPx={selectionRect} capturedScreenPx={_captureScreenBounds} cropPx={crop} "
+            + $"bitmap={captureSource.PixelWidth}x{captureSource.PixelHeight} delay={_captureDelaySeconds}");
+        if (crop.Width <= 5 || crop.Height <= 5)
+        {
+            CaptureCancelled?.Invoke(this, EventArgs.Empty);
             return;
+        }
 
-        var capturedImage = CropBitmapPixels(captureSource, screenPixelRect);
-        var captureRegion = ConvertScreenPixelsToOverlayRect(screenPixelRect);
-        CaptureCompleted?.Invoke(this, new CaptureEventArgs(capturedImage, captureRegion));
+        BitmapSource capturedImage;
+        try
+        {
+            capturedImage = new CroppedBitmap(captureSource, crop);
+            capturedImage.Freeze();
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.Write($"CaptureCoordinates crop failed: {ex}");
+            CaptureCancelled?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+        CaptureCompleted?.Invoke(this, new CaptureEventArgs(capturedImage,
+            CaptureCoordinates.ToScreenRect(crop, _captureScreenBounds)));
     }
 
     private async Task<BitmapSource?> CaptureScreenAfterCountdownAsync()
@@ -325,15 +399,7 @@ public partial class OverlayWindow : Window
         HideCursorMessage();
 
         CountdownIndicator.Visibility = Visibility.Visible;
-        CountdownIndicator.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Canvas.SetLeft(
-            CountdownIndicator,
-            -SystemParameters.VirtualScreenLeft
-                + (SystemParameters.PrimaryScreenWidth - CountdownIndicator.DesiredSize.Width) / 2);
-        Canvas.SetTop(
-            CountdownIndicator,
-            -SystemParameters.VirtualScreenTop
-                + (SystemParameters.PrimaryScreenHeight - CountdownIndicator.DesiredSize.Height) / 2);
+        CenterOnPrimaryScreen(CountdownIndicator);
 
         EnableMouseClickThrough();
 
@@ -353,7 +419,8 @@ public partial class OverlayWindow : Window
         await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         await Task.Delay(50);
 
-        var captureSource = ScreenCaptureService.CaptureScreen();
+        var captureSource = ScreenCaptureService.CaptureScreen(out var screenBounds);
+        _captureScreenBounds = screenBounds;
         if (captureSource == null)
         {
             MessageBox.Show(
@@ -393,7 +460,8 @@ public partial class OverlayWindow : Window
 
     private void UpdateSelection()
     {
-        var rect = GetSelectionRect();
+        var screenRect = GetSelectionScreenRect();
+        var rect = ScreenRectToOverlayRect(screenRect);
 
         // Update selection geometry (transparent hole)
         SelectionGeometry.Rect = rect;
@@ -405,18 +473,7 @@ public partial class OverlayWindow : Window
         SelectionBorder.Height = rect.Height;
 
         // Update size indicator - show physical pixel size
-        if (_screenCapture != null && ActualWidth > 0 && ActualHeight > 0)
-        {
-            double scaleX = (double)_screenCapture.PixelWidth / ActualWidth;
-            double scaleY = (double)_screenCapture.PixelHeight / ActualHeight;
-            int pixelWidth = (int)Math.Round(rect.Width * scaleX);
-            int pixelHeight = (int)Math.Round(rect.Height * scaleY);
-            SizeText.Text = $"{pixelWidth} × {pixelHeight}";
-        }
-        else
-        {
-            SizeText.Text = $"{(int)rect.Width} × {(int)rect.Height}";
-        }
+        SizeText.Text = $"{(int)screenRect.Width} × {(int)screenRect.Height}";
         
         // Position size indicator below selection
         double indicatorX = rect.X;
@@ -430,75 +487,28 @@ public partial class OverlayWindow : Window
         Canvas.SetTop(SizeIndicator, indicatorY);
     }
 
-    private Rect GetSelectionRect()
+    private Rect GetSelectionScreenRect()
     {
-        double x = Math.Min(_startPoint.X, _currentPoint.X);
-        double y = Math.Min(_startPoint.Y, _currentPoint.Y);
-        double width = Math.Abs(_currentPoint.X - _startPoint.X);
-        double height = Math.Abs(_currentPoint.Y - _startPoint.Y);
-
-        return new Rect(x, y, width, height);
+        return new Rect(_startScreenPoint, _currentScreenPoint);
     }
 
-    private BitmapSource? CropBitmap(BitmapSource? source, Rect rect)
-    {
-        if (source == null) return null;
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NativePoint { public int X, Y; }
 
-        double scaleX = (double)source.PixelWidth / ActualWidth;
-        double scaleY = (double)source.PixelHeight / ActualHeight;
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NativeRect { public int Left, Top, Right, Bottom; }
 
-        int x = (int)Math.Round(rect.X * scaleX);
-        int y = (int)Math.Round(rect.Y * scaleY);
-        int width = (int)Math.Round(rect.Width * scaleX);
-        int height = (int)Math.Round(rect.Height * scaleY);
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool GetPhysicalCursorPos(out NativePoint point);
 
-        // Boundary check
-        x = Math.Clamp(x, 0, source.PixelWidth - 1);
-        y = Math.Clamp(y, 0, source.PixelHeight - 1);
-        width = Math.Min(width, source.PixelWidth - x);
-        height = Math.Min(height, source.PixelHeight - y);
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
 
-        if (width <= 5 || height <= 5) return null;
-
-        try
-        {
-            var croppedBitmap = new CroppedBitmap(source, new Int32Rect(x, y, width, height));
-            croppedBitmap.Freeze();
-            return croppedBitmap;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
-
-    private BitmapSource? CropBitmapPixels(BitmapSource? source, Rect pixelRect)
-    {
-        if (source == null) return null;
-
-        int x = (int)Math.Round(pixelRect.X);
-        int y = (int)Math.Round(pixelRect.Y);
-        int width = (int)Math.Round(pixelRect.Width);
-        int height = (int)Math.Round(pixelRect.Height);
-
-        x = Math.Clamp(x, 0, source.PixelWidth - 1);
-        y = Math.Clamp(y, 0, source.PixelHeight - 1);
-        width = Math.Min(width, source.PixelWidth - x);
-        height = Math.Min(height, source.PixelHeight - y);
-
-        if (width <= 5 || height <= 5) return null;
-
-        try
-        {
-            var croppedBitmap = new CroppedBitmap(source, new Int32Rect(x, y, width, height));
-            croppedBitmap.Freeze();
-            return croppedBitmap;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern int GetWindowLong(IntPtr windowHandle, int index);

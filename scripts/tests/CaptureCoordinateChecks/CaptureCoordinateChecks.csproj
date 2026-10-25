@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>..\..\..\app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\..\GlobalUsings.cs" Link="GlobalUsings.cs" />
+    <Compile Include="..\..\..\Services\CaptureCoordinates.cs" Link="CaptureCoordinates.cs" />
+    <Compile Include="..\..\..\Services\CaptureEventArgs.cs" Link="CaptureEventArgs.cs" />
+    <Compile Include="..\..\..\Services\DiagnosticLog.cs" Link="DiagnosticLog.cs" />
+    <Compile Include="..\..\..\Services\ScreenCaptureService.cs" Link="ScreenCaptureService.cs" />
+    <Compile Include="..\..\..\Services\WindowSelectionService.cs" Link="WindowSelectionService.cs" />
+    <Compile Include="..\..\..\Services\SettingsService.cs" Link="SettingsService.cs" />
+    <Compile Include="..\..\..\Services\LocalizationService.cs" Link="LocalizationService.cs" />
+    <Compile Include="..\..\..\Views\OverlayWindow.xaml.cs" Link="OverlayWindow.xaml.cs" />
+    <Page Include="..\..\..\Views\OverlayWindow.xaml" Link="OverlayWindow.xaml" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+  </ItemGroup>
+</Project>

@@ -44,6 +44,8 @@ public class SavedWindowBounds
 
 public class SavedCaptureRegion
 {
+    // False for legacy settings, which stored overlay DIPs without the original DPI.
+    public bool IsPhysicalScreenCoordinates { get; set; }
     public double X { get; set; }
     public double Y { get; set; }
     public double Width { get; set; }
