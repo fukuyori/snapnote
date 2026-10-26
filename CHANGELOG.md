@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.3.3 - 2026-10-26
+
+### Fixed
+- Keep the OCR/translation pane open (empty) when OCR finds no text, instead of leaving it hidden after a new capture with Auto OCR or Auto Translate enabled.
+
 ## 4.3.2 - 2026-10-25
 
 ### Fixed

@@ -1599,6 +1599,8 @@ public partial class EditorWindow : Window
 
             if (string.IsNullOrWhiteSpace(text))
             {
+                // Keep the pane open (empty) so it doesn't vanish when a capture has no readable text.
+                ShowOcrPane(string.Empty);
                 StatusText.Text = L10n.Get("OcrNoTextFound");
                 return;
             }
