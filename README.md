@@ -139,7 +139,7 @@ With Inno Setup installed, run the following:
 $env:CODESIGN_CERT = "<thumbprint | subject name | path\to\certificate.pfx>"
 .\scripts\build-installer.ps1 -Sign
 
-# Output: installer_output/SnapNoteStudio_Setup_4.3.4.exe
+# Output: installer_output/SnapNoteStudio_Setup_4.3.5.exe
 
 # Unsigned per-user installer without elevated-app hotkey support
 .\scripts\build-installer.ps1 -NoUiAccess

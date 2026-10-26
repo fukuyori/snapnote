@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.3.5 - 2026-10-26
+
+### Changed
+- Revert the 4.3.4 OCR saturation fallback and its diagnostic logging. OCR behaves the same as in 4.3.3.
+
 ## 4.3.4 - 2026-10-26
 
 ### Fixed
