@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.3.4 - 2026-10-26
+
+### Fixed
+- Retry OCR on a saturation-based black-and-white rendering when the original image yields little or no text, so vivid colored text over a similarly bright colored background (e.g. game subtitles) can be recognized.
+- Log OCR engine failures and fallback scores to the diagnostic log instead of silently discarding them.
+
 ## 4.3.3 - 2026-10-26
 
 ### Fixed

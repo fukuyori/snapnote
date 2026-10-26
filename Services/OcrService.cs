@@ -34,8 +34,37 @@ public static class OcrService
         if (engines.Count == 0)
             return string.Empty;
 
-        using var softwareBitmap = await ToSoftwareBitmapAsync(bitmapSource);
+        var (pixels, width, height) = GetBgraPixels(bitmapSource);
 
+        using var softwareBitmap = await ToSoftwareBitmapAsync(pixels, width, height);
+        var (bestText, bestScore) = await RecognizeBestAsync(engines, softwareBitmap);
+
+        // Colored text over a similarly bright colored background (e.g. game subtitles) often
+        // yields nothing from the original image. Only then retry with a saturation-based
+        // black-on-white rendering, so ordinary captures keep their original result.
+        if (bestScore < MinScoreBeforeFallback)
+        {
+            var fallbackPixels = BinarizeBySaturation(pixels);
+            using var fallbackBitmap = await ToSoftwareBitmapAsync(fallbackPixels, width, height);
+            var (fallbackText, fallbackScore) = await RecognizeBestAsync(engines, fallbackBitmap);
+
+            DiagnosticLog.Write($"OCR saturation fallback size={width}x{height} originalScore={bestScore} fallbackScore={fallbackScore}");
+
+            if (fallbackScore > bestScore)
+            {
+                bestScore = fallbackScore;
+                bestText = fallbackText;
+            }
+        }
+
+        return bestText;
+    }
+
+    /// <summary>Results with fewer recognized letters/digits than this trigger the saturation fallback.</summary>
+    private const int MinScoreBeforeFallback = 20;
+
+    private static async Task<(string Text, int Score)> RecognizeBestAsync(List<OcrEngine> engines, SoftwareBitmap softwareBitmap)
+    {
         // When multiple candidate languages are configured, the real language of the
         // captured text isn't known ahead of time, so every candidate is run and the
         // result with the most recognized letters/digits (i.e. the least garbled) wins.
@@ -49,8 +78,9 @@ public static class OcrService
             {
                 result = await engine.RecognizeAsync(softwareBitmap);
             }
-            catch
+            catch (Exception ex)
             {
+                DiagnosticLog.Write($"OCR engine {engine.RecognizerLanguage.LanguageTag} failed: {ex.Message}");
                 continue;
             }
 
@@ -64,7 +94,85 @@ public static class OcrService
             }
         }
 
-        return bestText;
+        return (bestText, bestScore);
+    }
+
+    /// <summary>
+    /// Renders the image as black text on white by separating pixels on color saturation.
+    /// Otsu's threshold is applied twice: the first split separates dark/dull areas, and the
+    /// second split of only the saturated side separates vivid text from a duller colored
+    /// background whose brightness is too close to the text for a grayscale threshold.
+    /// </summary>
+    private static byte[] BinarizeBySaturation(byte[] bgra)
+    {
+        int pixelCount = bgra.Length / 4;
+        var saturation = new byte[pixelCount];
+        for (int i = 0; i < pixelCount; i++)
+        {
+            int b = bgra[i * 4], g = bgra[i * 4 + 1], r = bgra[i * 4 + 2];
+            saturation[i] = (byte)(Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)));
+        }
+
+        var histogram = new int[256];
+        foreach (var value in saturation)
+            histogram[value]++;
+
+        int firstThreshold = OtsuThreshold(histogram, 0);
+        int threshold = OtsuThreshold(histogram, firstThreshold + 1);
+
+        var result = new byte[bgra.Length];
+        for (int i = 0; i < pixelCount; i++)
+        {
+            byte value = saturation[i] > threshold ? (byte)0 : (byte)255;
+            result[i * 4] = result[i * 4 + 1] = result[i * 4 + 2] = value;
+            result[i * 4 + 3] = 255;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Otsu's threshold over histogram bins from <paramref name="start"/> to 255. Pixels above the
+    /// returned value form the foreground class.
+    /// </summary>
+    private static int OtsuThreshold(int[] histogram, int start)
+    {
+        long total = 0;
+        double sum = 0;
+        for (int t = start; t < 256; t++)
+        {
+            total += histogram[t];
+            sum += (double)t * histogram[t];
+        }
+
+        int threshold = Math.Max(start - 1, 0);
+        double sumBackground = 0, bestVariance = -1;
+        long weightBackground = 0;
+
+        for (int t = start; t < 256; t++)
+        {
+            weightBackground += histogram[t];
+            if (weightBackground == 0)
+                continue;
+
+            long weightForeground = total - weightBackground;
+            if (weightForeground == 0)
+                break;
+
+            sumBackground += (double)t * histogram[t];
+            double meanBackground = sumBackground / weightBackground;
+            double meanForeground = (sum - sumBackground) / weightForeground;
+            double variance = (double)weightBackground * weightForeground
+                * (meanBackground - meanForeground) * (meanBackground - meanForeground);
+
+            if (variance > bestVariance)
+            {
+                bestVariance = variance;
+                threshold = t;
+            }
+        }
+
+        return threshold;
     }
 
     /// <summary>
@@ -196,7 +304,7 @@ public static class OcrService
         }
     }
 
-    private static async Task<SoftwareBitmap> ToSoftwareBitmapAsync(BitmapSource bitmapSource)
+    private static (byte[] Pixels, int Width, int Height) GetBgraPixels(BitmapSource bitmapSource)
     {
         var converted = bitmapSource.Format == PixelFormats.Bgra32
             ? bitmapSource
@@ -208,6 +316,11 @@ public static class OcrService
         var pixels = new byte[height * stride];
         converted.CopyPixels(pixels, stride, 0);
 
+        return (pixels, width, height);
+    }
+
+    private static async Task<SoftwareBitmap> ToSoftwareBitmapAsync(byte[] pixels, int width, int height)
+    {
         using var stream = new InMemoryRandomAccessStream();
         var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
         encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)width, (uint)height, 96, 96, pixels);
